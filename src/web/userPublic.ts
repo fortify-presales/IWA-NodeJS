@@ -34,7 +34,8 @@ router.get('/forgot-password', (req: Request, res: Response) => {
 
 router.post('/forgot-password', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await userService.findByUsername ? null : null;
+    // Lookup user by email — always respond with generic message to prevent user enumeration
+    await userService.emailExists(req.body.email);
     res.render('user/forgot-password', { title: 'Forgot Password', success: 'If that email exists, a reset link has been sent.' });
   } catch (err) { next(err); }
 });

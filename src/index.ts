@@ -16,7 +16,7 @@ async function bootstrap() {
     await sequelize.authenticate();
     logger.info('Database connection established');
 
-    await sequelize.sync({ force: true });
+    await sequelize.sync({ force: env.isDevelopment || env.isTest });
     logger.info('Database synchronized');
 
     await seed();

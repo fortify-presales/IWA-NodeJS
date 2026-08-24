@@ -27,6 +27,6 @@ describe('Path Traversal - CWE-22', () => {
     
     // path.basename removes the directory traversal
     expect(path.basename(traversalPath)).toBe('hosts');
-    expect(safe).toContain(svc['uploadDir']);
+    expect(path.resolve(safe)).toContain(path.resolve(svc['uploadDir']));
   });
 });

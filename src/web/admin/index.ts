@@ -165,9 +165,9 @@ router.get('/backdoor', (req: Request, res: Response) => {
   // Purpose: demonstrates hardcoded credentials/backdoor access for Fortify DAST/SAST
   // Fix: Remove the backdoor and rely on proper authenticated admin access only
   if (req.query.token === BACKDOOR_TOKEN) {
-    return res.render('admin/backdoor', { title: 'Backdoor Access', granted: true });
+    return res.render('admin/backdoor', { title: 'Backdoor Access', granted: true, message: 'Backdoor access granted!', user: req.user });
   }
-  return res.status(403).render('admin/backdoor', { title: 'Backdoor Access', granted: false });
+  return res.status(403).render('admin/backdoor', { title: 'Backdoor Access', granted: false, message: 'Invalid backdoor token', user: null });
 });
 
 export { router as adminRouter };
