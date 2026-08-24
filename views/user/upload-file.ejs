@@ -1,0 +1,7 @@
+<h2>Upload File</h2>
+<% if (typeof success !== 'undefined' && success) { %><div class="alert alert-success"><%= success %></div><% } %>
+<!-- INSECURE: unrestricted file upload (CWE-434) -->
+<form method="POST" action="/user/upload-file" enctype="multipart/form-data">
+  <div class="form-group"><label>Select File (any type accepted)</label><input type="file" name="file" class="form-control-file" required></div>
+  <button type="submit" class="btn btn-primary">Upload</button>
+</form>

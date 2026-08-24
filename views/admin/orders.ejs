@@ -1,0 +1,9 @@
+<h2>Order Management</h2>
+<table class="table table-sm">
+  <thead><tr><th>Order #</th><th>User</th><th>Amount</th><th>Status</th></tr></thead>
+  <tbody>
+  <% for (const o of orders) { %>
+  <tr><td><%= o.orderNum %></td><td><%= o.user?.username %></td><td><%= o.amount %></td><td><%= o.shipped ? 'Shipped' : 'Pending' %></td></tr>
+  <% } %>
+  </tbody>
+</table>

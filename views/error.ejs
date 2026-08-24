@@ -1,0 +1,9 @@
+<div class="alert alert-danger">
+  <h4><%= title || 'Error' %></h4>
+  <p><%= message %></p>
+  <!-- INSECURE: stack trace rendered unescaped (CWE-209) -->
+  <% if (stack) { %>
+    <pre class="text-monospace small"><%- stack %></pre>
+  <% } %>
+</div>
+<a href="/" class="btn btn-secondary">Home</a>

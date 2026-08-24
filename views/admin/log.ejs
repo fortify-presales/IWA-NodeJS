@@ -1,0 +1,7 @@
+<h2>Application Log</h2>
+<form class="form-inline mb-3" method="POST" action="/admin/log">
+  <input type="text" name="val" id="val" class="form-control mr-2" placeholder="Log injection payload (CWE-117)">
+  <button type="submit" class="btn btn-warning">Inject Log Entry</button>
+</form>
+<!-- INSECURE: log rendered unescaped (CWE-79, CWE-117) -->
+<pre class="bg-dark text-white p-3 small" style="height:400px;overflow:auto"><%- logContent %></pre>

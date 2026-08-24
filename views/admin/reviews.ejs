@@ -1,0 +1,15 @@
+<h2>Review Management</h2>
+<table class="table table-sm">
+  <thead><tr><th>Product</th><th>User</th><th>Comment</th><th>Rating</th></tr></thead>
+  <tbody>
+  <% for (const r of reviews) { %>
+  <tr>
+    <td><%= r.product?.name %></td>
+    <td><%= r.user?.username %></td>
+    <!-- INSECURE: stored XSS (CWE-79) -->
+    <td><%- r.comment %></td>
+    <td><%= r.rating %></td>
+  </tr>
+  <% } %>
+  </tbody>
+</table>

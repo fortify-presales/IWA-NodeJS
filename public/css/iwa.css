@@ -1,0 +1,5 @@
+body { font-size: 0.9rem; }
+.navbar-brand { font-weight: bold; }
+pre { white-space: pre-wrap; word-break: break-all; }
+.jumbotron { background: linear-gradient(135deg, #0062cc 0%, #00c4a7 100%); color: white; }
+.jumbotron .btn-primary { background: white; color: #0062cc; border: none; }

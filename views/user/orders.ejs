@@ -1,0 +1,18 @@
+<h2>My Orders</h2>
+<% if (!orders.length) { %><div class="alert alert-info">No orders yet.</div>
+<% } else { %>
+<table class="table">
+  <thead><tr><th>Order #</th><th>Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+  <tbody>
+  <% for (const order of orders) { %>
+  <tr>
+    <td><%= order.orderNum %></td>
+    <td><%= order.orderDate?.toLocaleDateString?.() || '' %></td>
+    <td><%= currency %> <%= order.amount %></td>
+    <td><span class="badge badge-<%= order.shipped ? 'success' : 'warning' %>"><%= order.shipped ? 'Shipped' : 'Pending' %></span></td>
+    <td><a href="/user/orders/<%= order.id %>/invoice.pdf" class="btn btn-sm btn-outline-primary">Invoice</a></td>
+  </tr>
+  <% } %>
+  </tbody>
+</table>
+<% } %>

@@ -1,0 +1,7 @@
+<h2>Prescriptions</h2>
+<p>Order your repeat prescriptions online. We will dispense and deliver to your door.</p>
+<% if (!user) { %>
+  <div class="alert alert-info">Please <a href="/login">login</a> to order prescriptions.</div>
+<% } else { %>
+  <a href="/user/orders" class="btn btn-primary">View My Prescriptions</a>
+<% } %>

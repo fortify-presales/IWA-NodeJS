@@ -1,0 +1,11 @@
+<h2>Security Settings</h2>
+<p>Current MFA: <%= user.mfaType %></p>
+<% if (typeof qrCode !== 'undefined') { %>
+  <p>Scan this QR code with your authenticator app:</p>
+  <img src="<%= qrCode %>" alt="QR Code">
+  <p>Secret: <code><%= secret %></code></p>
+<% } else { %>
+  <form method="POST" action="/user/security/enable-mfa">
+    <button type="submit" class="btn btn-primary">Enable TOTP MFA</button>
+  </form>
+<% } %>

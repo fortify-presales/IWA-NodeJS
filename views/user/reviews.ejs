@@ -1,0 +1,14 @@
+<h2>Reviews</h2>
+<table class="table">
+  <thead><tr><th>Product</th><th>Comment</th><th>Rating</th></tr></thead>
+  <tbody>
+  <% for (const review of reviews) { %>
+  <tr>
+    <td><%= review.product?.name || 'Unknown' %></td>
+    <!-- INSECURE: stored XSS (CWE-79) -->
+    <td><%- review.comment %></td>
+    <td><%= review.rating %>/5</td>
+  </tr>
+  <% } %>
+  </tbody>
+</table>

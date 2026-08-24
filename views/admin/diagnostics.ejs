@@ -1,0 +1,25 @@
+<h2>Admin Diagnostics</h2>
+<div class="row">
+  <div class="col-md-6">
+    <h5>Expression Evaluator</h5>
+    <div class="alert alert-danger">⚠️ INSECURE: Code Injection via eval (CWE-95)</div>
+    <form method="POST" action="/admin/diagnostics">
+      <div class="form-group"><label>Expression</label><input type="text" name="expr" class="form-control" placeholder="1+1"></div>
+      <button type="submit" class="btn btn-warning">Evaluate</button>
+    </form>
+    <% if (typeof evalResult !== 'undefined' && evalResult) { %>
+    <div class="alert alert-info mt-2">Result: <%- evalResult %></div>
+    <% } %>
+  </div>
+  <div class="col-md-6">
+    <h5>URL Fetch</h5>
+    <div class="alert alert-danger">⚠️ INSECURE: SSRF (CWE-918)</div>
+    <form method="POST" action="/admin/diagnostics">
+      <div class="form-group"><label>URL</label><input type="text" name="url" class="form-control" placeholder="http://internal-service/"></div>
+      <button type="submit" class="btn btn-warning">Fetch</button>
+    </form>
+    <% if (typeof fetchResult !== 'undefined' && fetchResult) { %>
+    <pre class="bg-light p-2 mt-2 small"><%- fetchResult %></pre>
+    <% } %>
+  </div>
+</div>

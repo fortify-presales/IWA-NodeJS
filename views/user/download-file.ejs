@@ -1,0 +1,9 @@
+<h1>Download Uploaded Files</h1>
+<ul class="list-group">
+  <% files.forEach(file => { %>
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <span><%= file %></span>
+      <a class="btn btn-sm btn-outline-primary" href="/user/files/download/unverified?file=<%= encodeURIComponent(file) %>">Download</a>
+    </li>
+  <% }) %>
+</ul>

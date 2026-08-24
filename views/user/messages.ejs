@@ -1,0 +1,14 @@
+<h2>My Messages</h2>
+<% if (!messages.length) { %><div class="alert alert-info">No messages.</div>
+<% } else { %>
+<div class="list-group">
+<% for (const msg of messages) { %>
+  <div class="list-group-item <%= msg.read ? '' : 'list-group-item-info' %>">
+    <!-- INSECURE: message text rendered unescaped (stored XSS CWE-79) -->
+    <%- msg.text %>
+    <small class="text-muted ml-2"><%= msg.sentDate?.toLocaleString?.() %></small>
+    <% if (!msg.read) { %><span class="badge badge-primary ml-2">New</span><% } %>
+  </div>
+<% } %>
+</div>
+<% } %>
