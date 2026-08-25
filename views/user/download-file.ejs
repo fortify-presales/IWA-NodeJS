@@ -1,9 +1,25 @@
-<h1>Download Uploaded Files</h1>
-<ul class="list-group">
-  <% files.forEach(file => { %>
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-      <span><%= file %></span>
-      <a class="btn btn-sm btn-outline-primary" href="/user/files/download/unverified?file=<%= encodeURIComponent(file) %>">Download</a>
-    </li>
-  <% }) %>
-</ul>
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/user/home">My Account</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Download Files</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
+    <h2 class="text-black mb-4">Download Uploaded Files</h2>
+    <% if (!files.length) { %>
+      <div class="alert alert-info">No files uploaded yet.</div>
+    <% } else { %>
+      <ul class="list-group">
+        <% files.forEach(file => { %>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><%= file %></span>
+            <a class="btn btn-sm btn-outline-primary" href="/user/files/download/unverified?file=<%= encodeURIComponent(file) %>">Download</a>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </div>
+</div>

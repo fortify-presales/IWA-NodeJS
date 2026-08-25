@@ -1,7 +1,19 @@
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/admin">Admin</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Backdoor</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
 <div class="alert alert-danger">
   <h4>⚠️ Backdoor Access (CWE-798)</h4>
   <!-- INSECURE: hardcoded admin backdoor (CWE-798) -->
   <p><strong><%= message %></strong></p>
   <p>Logged in as: <%= user?.username %></p>
   <p>This backdoor is accessible with token: <code>iwa-admin-backdoor-super-secret-token-cwe798</code></p>
+</div>
+  </div>
 </div>

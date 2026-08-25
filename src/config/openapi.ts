@@ -17,7 +17,8 @@ const options: swaggerJsdoc.Options = {
     },
     security: [{ bearerAuth: [] }],
   },
-  apis: ['./src/api/v3/*.ts'],
+  // Support both tsx dev (src/*.ts) and compiled production (dist/*.js)
+  apis: ['./src/api/v3/*.ts', './dist/api/v3/*.js'],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

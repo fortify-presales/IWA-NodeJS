@@ -1,17 +1,23 @@
-<div class="row justify-content-center">
-  <div class="col-md-6">
-    <h2>Two-Factor Authentication</h2>
-    <!-- INSECURE: error rendered unescaped (XSS CWE-79) -->
-    <% if (error) { %>
-      <div class="alert alert-danger"><%- error %></div>
-    <% } %>
-    <p>Please enter your verification code.</p>
-    <form method="POST" action="/login-mfa">
-      <div class="form-group">
-        <label>Verification Code</label>
-        <input type="text" name="code" class="form-control" maxlength="6" required autofocus>
+<div class="site-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-5">
+        <div class="card p-4">
+          <h2 class="text-black mb-4">Two-Factor Authentication</h2>
+          <!-- INSECURE: error rendered unescaped (XSS CWE-79) -->
+          <% if (error) { %>
+            <div class="alert alert-danger"><%- error %></div>
+          <% } %>
+          <p>Please enter your verification code.</p>
+          <form method="POST" action="/login-mfa">
+            <div class="form-group">
+              <label>Verification Code</label>
+              <input type="text" name="code" class="form-control" maxlength="6" required autofocus>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Verify</button>
+          </form>
+        </div>
       </div>
-      <button type="submit" class="btn btn-primary">Verify</button>
-    </form>
+    </div>
   </div>
 </div>

@@ -1,7 +1,23 @@
-<h2>Prescriptions</h2>
-<p>Order your repeat prescriptions online. We will dispense and deliver to your door.</p>
-<% if (!user) { %>
-  <div class="alert alert-info">Please <a href="/login">login</a> to order prescriptions.</div>
-<% } else { %>
-  <a href="/user/orders" class="btn btn-primary">View My Prescriptions</a>
-<% } %>
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/">Home</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Prescriptions</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <h2 class="text-black mb-4">Prescriptions</h2>
+        <p>Order your repeat prescriptions online. We will dispense and deliver to your door.</p>
+        <% if (!user) { %>
+          <div class="alert alert-info">Please <a href="/login">login</a> to order prescriptions.</div>
+        <% } else { %>
+          <a href="/user/orders" class="btn btn-primary">View My Prescriptions</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

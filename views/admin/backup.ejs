@@ -1,3 +1,13 @@
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/admin">Admin</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Backup &amp; Restore</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
 <h2>Backup & Restore</h2>
 <div class="alert alert-danger">⚠️ INSECURE: Zip Slip (CWE-22)</div>
 <form method="POST" action="/admin/backup" enctype="multipart/form-data">
@@ -5,3 +15,5 @@
   <button type="submit" class="btn btn-warning">Extract Archive</button>
 </form>
 <% if (result) { %><pre class="bg-light p-2 mt-3"><%= result %></pre><% } %>
+  </div>
+</div>

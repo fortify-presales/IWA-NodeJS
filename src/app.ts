@@ -50,7 +50,11 @@ export function createApp() {
 
   app.use(express.static(path.resolve('public')));
   app.use('/uploads', express.static(env.uploadDir));
-  app.use('/swagger-ui', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use('/swagger-ui', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    swaggerOptions: { url: '/v3/api-docs' },
+  }));
+  // Redirect the static index.html (which defaults to Petstore) to the configured UI
+  app.get('/swagger-ui/index.html', (_req, res) => res.redirect(301, '/swagger-ui/'));
   app.get('/v3/api-docs', (_req, res) => res.json(swaggerSpec));
 
   app.use('/api/v3/site', siteRouter);
