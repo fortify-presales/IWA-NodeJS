@@ -1,8 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { productService } from '../services/ProductService.js';
 import { orderService } from '../services/OrderService.js';
-import { requireAuth } from '../middleware/requireAuth.js';
-import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
@@ -47,8 +45,12 @@ router.post('/cart/remove', (req: Request, res: Response) => {
   res.redirect('/cart');
 });
 
-router.post('/cart/checkout', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/cart/checkout', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!req.isAuthenticated()) {
+      return res.redirect('/login?redirect=' + encodeURIComponent('/cart'));
+    }
+
     const cart = getCart(req);
     if (!cart.length) return res.redirect('/cart');
     const user = req.user as any;

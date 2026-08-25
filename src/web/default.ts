@@ -23,7 +23,8 @@ router.get('/login', (req: Request, res: Response) => {
   if (req.isAuthenticated()) return res.redirect('/user/home');
   // INSECURE: reflected XSS — error rendered unescaped (CWE-79)
   const error = req.query.error as string || '';
-  res.render('login', { title: 'Login', error, redirect: req.query.redirect || '' });
+  const message = req.query.message as string || '';
+  res.render('login', { title: 'Login', error, redirect: req.query.redirect || '', message });
 });
 
 // POST /login

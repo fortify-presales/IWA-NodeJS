@@ -48,6 +48,7 @@ export function createApp() {
   app.use(passport.session());
   app.use(locals);
 
+  app.use(express.static(path.resolve('public')));
   app.use('/uploads', express.static(env.uploadDir));
   app.use('/swagger-ui', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   app.get('/v3/api-docs', (_req, res) => res.json(swaggerSpec));
