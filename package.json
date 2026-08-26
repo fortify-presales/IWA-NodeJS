@@ -33,6 +33,7 @@
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-ejs-layouts": "^2.5.1",
+    "express-fileupload": "1.1.6",
     "express-session": "^1.18.0",
     "express-validator": "^7.1.0",
     "handlebars": "4.0.11",
@@ -91,6 +92,7 @@
     "supertest": "^7.0.0",
     "tsx": "^4.10.2",
     "typescript": "^5.4.5",
-    "vitest": "^1.6.0"
+    "vitest": "^1.6.0",
+    "save-dev": "^0.0.1-security"
   }
 }
