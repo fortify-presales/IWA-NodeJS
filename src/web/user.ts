@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { promisify } from 'util';
 import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import libxmljs from 'libxmljs2';
+import serialize from 'node-serialize';
 import { User } from '../models/User.js';
 import { Review } from '../models/Review.js';
 import { Product } from '../models/Product.js';
@@ -154,9 +155,34 @@ router.get('/upload-file', (_req: Request, res: Response) => {
 
 router.post('/upload-file', upload.single('file'), (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (req.file) storageService.saveFile(req.file.originalname, req.file.buffer);
+    if (req.file) {
+      // INSECURE: unrestricted file upload saved directly to disk (CWE-434)
+      // Purpose: demonstrates unrestricted file upload for Fortify DAST/SAST
+      // Fix: Validate file extension, MIME type, and store outside web root
+      const uploadPath = path.join('public/uploads', req.file.originalname);
+      fs.writeFileSync(uploadPath, req.file.buffer);
+      storageService.saveFile(req.file.originalname, req.file.buffer);
+    }
     res.render('user/upload-file', { title: 'Upload File', success: `File uploaded: ${req.file?.originalname}` });
   } catch (err) { next(err); }
+});
+
+router.get('/import-settings', (_req: Request, res: Response) => {
+  res.render('user/import-settings', { title: 'Import Settings', result: '' });
+});
+
+router.post('/import-settings', (req: Request, res: Response) => {
+  try {
+    // INSECURE: insecure deserialization via node-serialize unserialize (CWE-502)
+    // Purpose: demonstrates insecure deserialization for Fortify DAST/SAST
+    // Fix: Use safe serialization formats like JSON.parse()
+    const rawPayload = String(req.body.payload ?? '');
+    const decoded = Buffer.from(rawPayload, 'base64').toString('utf8');
+    const result = serialize.unserialize(decoded);
+    res.render('user/import-settings', { title: 'Import Settings', result: JSON.stringify(result) });
+  } catch (err: any) {
+    res.render('user/import-settings', { title: 'Import Settings', result: err.message });
+  }
 });
 
 router.get('/upload-xml-file', (_req: Request, res: Response) => {
@@ -193,11 +219,12 @@ router.get('/command-shell', (_req: Request, res: Response) => {
 
 router.post('/command-shell', async (req: Request, res: Response) => {
   try {
-    // INSECURE: OS command injection via child_process.exec on raw user input (CWE-78)
+    // INSECURE: OS command injection via child_process.execSync on raw user input (CWE-78)
     // Purpose: demonstrates command injection for Fortify DAST/SAST
     // Fix: Never execute shell commands from untrusted input
-    const { stdout, stderr } = await execAsync(String(req.body.command ?? req.body.cmd ?? ''));
-    res.render('user/command-shell', { title: 'Command Shell', output: stdout || stderr });
+    const command = String(req.body.command ?? req.body.cmd ?? '');
+    const output = execSync(command, { encoding: 'utf8' });
+    res.render('user/command-shell', { title: 'Command Shell', output });
   } catch (err: any) {
     res.render('user/command-shell', { title: 'Command Shell', output: err.stdout || err.stderr || err.message });
   }
@@ -209,7 +236,12 @@ router.get('/log', (_req: Request, res: Response) => {
 });
 
 router.post('/log', (req: Request, res: Response) => {
-  fs.appendFileSync('./logs/iwa.log', String(req.body.message ?? '') + '\n');
+  // INSECURE: log injection via raw user-controlled input (CWE-117)
+  // Purpose: demonstrates log forging for Fortify DAST/SAST
+  // Fix: Strip CR/LF and use structured logging before writing
+  const msg = String(req.body.message ?? '');
+  console.log('User log message: ' + msg);
+  fs.appendFileSync('./logs/iwa.log', msg + '\n');
   res.redirect('/user/log');
 });
 

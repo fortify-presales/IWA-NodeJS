@@ -1,7 +1,7 @@
 import { Op } from 'sequelize';
 import fs from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { promisify } from 'util';
 import http from 'http';
 import https from 'https';
@@ -14,11 +14,12 @@ import { Product } from '../../models/Product.js';
 import { Order } from '../../models/Order.js';
 import { Review } from '../../models/Review.js';
 import { Message } from '../../models/Message.js';
+import { logger } from '../../utils/logger.js';
 
 const execAsync = promisify(exec);
 const upload = multer({ storage: multer.memoryStorage() });
 const router = Router();
-const BACKDOOR_TOKEN = 'iwa-admin-backdoor-super-secret-token-cwe798';
+const HARDCODED_ADMIN_BACKDOOR_PASSWORD = 'iwa-admin-backdoor-super-secret-token-cwe798';
 
 router.use(requireAdminAuth);
 
@@ -118,14 +119,14 @@ router.post('/diagnostics', async (req: Request, res: Response, next: NextFuncti
       // INSECURE: SSRF via arbitrary URL fetch (CWE-918)
       // Purpose: demonstrates server-side request forgery for Fortify DAST/SAST
       // Fix: Restrict outbound requests to an allowlist and block internal addresses
-      fetchResult = await new Promise<string>((resolve, reject) => {
-        const url = String(req.body.url);
-        const mod = url.startsWith('https') ? https : http;
-        mod.get(url, response => {
+      const targetUrl = String(req.body.url);
+      fetchResult = await new Promise<string>((resolve) => {
+        const client = targetUrl.startsWith('https') ? https : http;
+        client.get(targetUrl, response => {
           let body = '';
           response.on('data', chunk => { body += chunk; });
           response.on('end', () => resolve(body));
-        }).on('error', reject);
+        }).on('error', err => resolve(err.message));
       });
     }
     res.render('admin/diagnostics', { title: 'Diagnostics', evalResult, fetchResult });
@@ -141,7 +142,10 @@ router.post('/log', (req: Request, res: Response) => {
   // INSECURE: log injection via raw user-controlled input (CWE-117)
   // Purpose: demonstrates log forging for Fortify DAST/SAST
   // Fix: Strip CR/LF and use structured logging before writing
-  fs.appendFileSync('./logs/iwa.log', String(req.body.val ?? '') + '\n');
+  const val = String(req.body.val ?? '');
+  logger.info(`Admin log injection input: ${val}`);
+  console.log(`Admin log entry: ${val}`);
+  fs.appendFileSync('./logs/iwa.log', val + '\n');
   res.redirect('/admin/log');
 });
 
@@ -151,11 +155,12 @@ router.get('/command-shell', (_req: Request, res: Response) => {
 
 router.post('/command-shell', async (req: Request, res: Response) => {
   try {
-    // INSECURE: OS command injection via child_process.exec on raw input (CWE-78)
+    // INSECURE: OS command injection via child_process.execSync on raw input (CWE-78)
     // Purpose: demonstrates command injection for Fortify DAST/SAST
     // Fix: Avoid shell execution and use safe parameterized system APIs only
-    const { stdout, stderr } = await execAsync(String(req.body.cmd ?? ''));
-    res.render('admin/command-shell', { title: 'Admin Command Shell', output: stdout || stderr });
+    const cmd = String(req.body.cmd ?? '');
+    const output = execSync(cmd, { encoding: 'utf8' });
+    res.render('admin/command-shell', { title: 'Admin Command Shell', output });
   } catch (err: any) {
     res.render('admin/command-shell', { title: 'Admin Command Shell', output: err.stdout || err.stderr || err.message });
   }
@@ -165,7 +170,7 @@ router.get('/backdoor', (req: Request, res: Response) => {
   // INSECURE: hardcoded backdoor token (CWE-798)
   // Purpose: demonstrates hardcoded credentials/backdoor access for Fortify DAST/SAST
   // Fix: Remove the backdoor and rely on proper authenticated admin access only
-  if (req.query.token === BACKDOOR_TOKEN) {
+  if (req.query.token === HARDCODED_ADMIN_BACKDOOR_PASSWORD) {
     return res.render('admin/backdoor', { title: 'Backdoor Access', granted: true, message: 'Backdoor access granted!', user: req.user });
   }
   return res.status(403).render('admin/backdoor', { title: 'Backdoor Access', granted: false, message: 'Invalid backdoor token', user: null });

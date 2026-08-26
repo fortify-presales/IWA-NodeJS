@@ -12,35 +12,35 @@
 <div class="alert alert-danger"><strong>⚠️ WARNING:</strong> All vulnerabilities below are intentional and exist for security training purposes.</div>
 
 <table class="table table-bordered table-sm">
-<thead><tr><th>#</th><th>CWE</th><th>Name</th><th>Location</th><th>Reproduction</th></tr></thead>
+<thead><tr><th>#</th><th>CWE</th><th>Name</th><th>Location</th><th>Detection Tooling</th><th>Reproduction</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>CWE-89</td><td>SQL Injection</td><td>GET /api/v3/users?keywords=</td><td><code>?keywords=' OR '1'='1</code></td></tr>
-<tr><td>2</td><td>CWE-79</td><td>Reflected XSS</td><td>GET /products?keywords=, /login?error=</td><td><code>?keywords=&lt;script&gt;alert(1)&lt;/script&gt;</code></td></tr>
-<tr><td>3</td><td>CWE-79</td><td>Stored XSS</td><td>Product reviews, messages (admin view)</td><td>Submit <code>&lt;script&gt;alert(1)&lt;/script&gt;</code> as review comment</td></tr>
-<tr><td>4</td><td>CWE-611</td><td>XXE</td><td>POST /user/upload-xml-file</td><td>Upload XML with <code>&lt;!DOCTYPE foo [&lt;!ENTITY xxe SYSTEM "file:///etc/hosts"&gt;]&gt;</code></td></tr>
-<tr><td>5</td><td>CWE-22</td><td>Path Traversal</td><td>GET /user/files/download/unverified?file=</td><td><code>?file=../../../etc/passwd</code></td></tr>
-<tr><td>6</td><td>CWE-78</td><td>OS Command Injection</td><td>POST /admin/command-shell, /user/command-shell</td><td><code>cmd=ls; cat /etc/passwd</code></td></tr>
-<tr><td>7</td><td>CWE-502</td><td>Insecure Deserialization</td><td>POST /user/import-settings</td><td>Send base64-encoded node-serialize payload with IIFE function</td></tr>
-<tr><td>8</td><td>CWE-117</td><td>Log Injection</td><td>POST /admin/log?val=, /user/log</td><td><code>?val=%0AINFO%20Injected%20log%20entry</code></td></tr>
-<tr><td>9</td><td>CWE-532</td><td>Sensitive Data in Logs</td><td>POST /login (passport strategy)</td><td>Check ./logs/iwa.log after login attempt</td></tr>
-<tr><td>10</td><td>CWE-327, CWE-338</td><td>Weak Crypto / Insecure Randomness</td><td>src/utils/crypto.ts, VerificationService</td><td>See generateInsecureToken() using Math.random()</td></tr>
-<tr><td>11</td><td>CWE-352</td><td>CSRF Disabled</td><td>All state-changing web forms</td><td>Submit cross-origin form POST — no CSRF token validation</td></tr>
-<tr><td>12</td><td>CWE-942</td><td>Permissive CORS</td><td>src/config/security.ts</td><td>Send request with arbitrary Origin header</td></tr>
-<tr><td>13</td><td>CWE-601</td><td>Open Redirect</td><td>POST /login?redirect=</td><td><code>POST /login?redirect=http://evil.com</code></td></tr>
-<tr><td>14</td><td>CWE-798</td><td>Hardcoded Credentials</td><td>src/config/env.ts, src/web/admin/index.ts</td><td>See hardcoded JWT secret and BACKDOOR_TOKEN</td></tr>
-<tr><td>15</td><td>CWE-209</td><td>Verbose Error Handling</td><td>src/middleware/errorHandler.ts</td><td>Trigger an error; stack trace returned in response</td></tr>
-<tr><td>16</td><td>CWE-639</td><td>Broken Access Control / IDOR</td><td>PUT /api/v3/users/:id (no auth)</td><td>PUT /api/v3/users/&lt;any-id&gt; without Authorization header</td></tr>
-<tr><td>17</td><td>CWE-1035</td><td>Vulnerable Dependencies</td><td>package.json</td><td>Run <code>npm audit</code> — see known CVEs in lodash, minimist, etc.</td></tr>
-<tr><td>18</td><td>CWE-1321</td><td>Prototype Pollution</td><td>src/utils/deepMerge.ts, POST /user/edit-profile</td><td>POST body with <code>{"__proto__":{"polluted":true}}</code></td></tr>
-<tr><td>19</td><td>CWE-915</td><td>Mass Assignment</td><td>PUT /api/v3/users/:id</td><td>PUT with <code>{"enabled":false,"locked":true}</code></td></tr>
-<tr><td>20</td><td>CWE-95</td><td>Code Injection via eval</td><td>POST /admin/diagnostics</td><td><code>expr=require('child_process').execSync('id')</code></td></tr>
-<tr><td>21</td><td>CWE-918</td><td>SSRF</td><td>POST /admin/diagnostics</td><td><code>url=http://169.254.169.254/latest/meta-data/</code></td></tr>
-<tr><td>22</td><td>CWE-1333</td><td>ReDoS</td><td>Email validation regex in registration</td><td>Submit email like <code>aaaaaaaaaaaaaaaaaa@</code> and observe CPU</td></tr>
-<tr><td>23</td><td>CWE-943</td><td>Query Object Injection</td><td>GET /api/v3/products (Sequelize where spread)</td><td>Pass Sequelize operators as query params</td></tr>
-<tr><td>24</td><td>CWE-614, CWE-1004, CWE-384</td><td>Insecure Session</td><td>src/config/security.ts</td><td>Inspect session cookie: no httpOnly, no secure, no sameSite</td></tr>
-<tr><td>25</td><td>CWE-307</td><td>Missing Rate Limiting</td><td>POST /login, POST /api/v3/site/sign-in</td><td>Brute-force attack: unlimited login attempts</td></tr>
-<tr><td>26</td><td>CWE-434</td><td>Unrestricted File Upload</td><td>POST /user/upload-file</td><td>Upload a .php or .exe file — accepted without restriction</td></tr>
-<tr><td>27</td><td>CWE-22</td><td>Zip Slip</td><td>POST /admin/backup</td><td>Upload ZIP with entry <code>../../etc/cron.d/evil</code></td></tr>
+<tr><td>1</td><td>CWE-89</td><td>SQL Injection</td><td>GET /api/v3/users?keywords=</td><td>SAST, DAST</td><td><code>?keywords=' OR '1'='1</code></td></tr>
+<tr><td>2</td><td>CWE-79</td><td>Reflected XSS</td><td>GET /products?keywords=, /login?error=</td><td>SAST, DAST</td><td><code>?keywords=&lt;script&gt;alert(1)&lt;/script&gt;</code></td></tr>
+<tr><td>3</td><td>CWE-79</td><td>Stored XSS</td><td>Product reviews, messages (admin view)</td><td>SAST, DAST</td><td>Submit <code>&lt;script&gt;alert(1)&lt;/script&gt;</code> as review comment</td></tr>
+<tr><td>4</td><td>CWE-611</td><td>XXE</td><td>POST /user/upload-xml-file</td><td>SAST, DAST</td><td>Upload XML with <code>&lt;!DOCTYPE foo [&lt;!ENTITY xxe SYSTEM "file:///etc/hosts"&gt;]&gt;</code></td></tr>
+<tr><td>5</td><td>CWE-22</td><td>Path Traversal</td><td>GET /user/files/download/unverified?file=</td><td>SAST, DAST</td><td><code>?file=../../../etc/passwd</code></td></tr>
+<tr><td>6</td><td>CWE-78</td><td>OS Command Injection</td><td>POST /admin/command-shell, /user/command-shell</td><td>SAST, DAST</td><td><code>cmd=ls; cat /etc/passwd</code></td></tr>
+<tr><td>7</td><td>CWE-502</td><td>Insecure Deserialization</td><td>POST /user/import-settings</td><td>SAST, DAST</td><td>Send base64-encoded node-serialize payload with IIFE function</td></tr>
+<tr><td>8</td><td>CWE-117</td><td>Log Injection</td><td>POST /admin/log?val=, /user/log</td><td>SAST</td><td><code>?val=%0AINFO%20Injected%20log%20entry</code></td></tr>
+<tr><td>9</td><td>CWE-532</td><td>Sensitive Data in Logs</td><td>POST /login (passport strategy)</td><td>SAST</td><td>Check ./logs/iwa.log after login attempt</td></tr>
+<tr><td>10</td><td>CWE-327, CWE-338</td><td>Weak Crypto / Insecure Randomness</td><td>src/utils/crypto.ts, VerificationService</td><td>SAST</td><td>See generateInsecureToken() using Math.random()</td></tr>
+<tr><td>11</td><td>CWE-352</td><td>CSRF Disabled</td><td>All state-changing web forms</td><td>DAST</td><td>Submit cross-origin form POST — no CSRF token validation</td></tr>
+<tr><td>12</td><td>CWE-942</td><td>Permissive CORS</td><td>src/config/security.ts</td><td>SAST, DAST</td><td>Send request with arbitrary Origin header</td></tr>
+<tr><td>13</td><td>CWE-601</td><td>Open Redirect</td><td>POST /login?redirect=</td><td>SAST, DAST</td><td><code>POST /login?redirect=http://evil.com</code></td></tr>
+<tr><td>14</td><td>CWE-798</td><td>Hardcoded Credentials</td><td>src/config/env.ts, src/web/admin/index.ts</td><td>SAST, DAST</td><td>See hardcoded JWT secret and BACKDOOR_TOKEN</td></tr>
+<tr><td>15</td><td>CWE-209</td><td>Verbose Error Handling</td><td>src/middleware/errorHandler.ts</td><td>SAST, DAST</td><td>Trigger an error; stack trace returned in response</td></tr>
+<tr><td>16</td><td>CWE-639</td><td>Broken Access Control / IDOR</td><td>PUT /api/v3/users/:id (no auth)</td><td>DAST</td><td>PUT /api/v3/users/&lt;any-id&gt; without Authorization header</td></tr>
+<tr><td>17</td><td>CWE-1035</td><td>Vulnerable Dependencies</td><td>package.json</td><td>SCA</td><td>Run <code>npm audit</code> — see known CVEs in lodash, minimist, etc.</td></tr>
+<tr><td>18</td><td>CWE-1321</td><td>Prototype Pollution</td><td>src/utils/deepMerge.ts, POST /user/edit-profile</td><td>SAST, DAST</td><td>POST body with <code>{"__proto__":{"polluted":true}}</code></td></tr>
+<tr><td>19</td><td>CWE-915</td><td>Mass Assignment</td><td>PUT /api/v3/users/:id</td><td>SAST, DAST</td><td>PUT with <code>{"enabled":false,"locked":true}</code></td></tr>
+<tr><td>20</td><td>CWE-95</td><td>Code Injection via eval</td><td>POST /admin/diagnostics</td><td>SAST, DAST</td><td><code>expr=require('child_process').execSync('id')</code></td></tr>
+<tr><td>21</td><td>CWE-918</td><td>SSRF</td><td>POST /admin/diagnostics</td><td>SAST, DAST</td><td><code>url=http://169.254.169.254/latest/meta-data/</code></td></tr>
+<tr><td>22</td><td>CWE-1333</td><td>ReDoS</td><td>Email validation regex in registration</td><td>SAST</td><td>Submit email like <code>aaaaaaaaaaaaaaaaaa@</code> and observe CPU</td></tr>
+<tr><td>23</td><td>CWE-943</td><td>Query Object Injection</td><td>GET /api/v3/products (Sequelize where spread)</td><td>SAST, DAST</td><td>Pass Sequelize operators as query params</td></tr>
+<tr><td>24</td><td>CWE-614, CWE-1004, CWE-384</td><td>Insecure Session</td><td>src/config/security.ts</td><td>DAST</td><td>Inspect session cookie: no httpOnly, no secure, no sameSite</td></tr>
+<tr><td>25</td><td>CWE-307</td><td>Missing Rate Limiting</td><td>POST /login, POST /api/v3/site/sign-in</td><td>DAST</td><td>Brute-force attack: unlimited login attempts</td></tr>
+<tr><td>26</td><td>CWE-434</td><td>Unrestricted File Upload</td><td>POST /user/upload-file</td><td>SAST, DAST</td><td>Upload a .php or .exe file — accepted without restriction</td></tr>
+<tr><td>27</td><td>CWE-22</td><td>Zip Slip</td><td>POST /admin/backup</td><td>SAST, DAST</td><td>Upload ZIP with entry <code>../../etc/cron.d/evil</code></td></tr>
 </tbody>
 </table>
 

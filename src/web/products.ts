@@ -9,6 +9,12 @@ const router = Router();
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const keywords = (req.query.keywords as string) || '';
+    if (req.query.raw === 'true') {
+      // INSECURE: reflected XSS via direct response output sink (CWE-79)
+      // Purpose: demonstrates reflected XSS for Fortify SAST/DAST
+      // Fix: Sanitize and encode user input before sending in HTML response
+      return res.send(`<h1>Search results for: ${keywords}</h1>`);
+    }
     const page = parseInt(req.query.page as string) || 1;
     const size = parseInt(req.query.size as string) || env.pageSize;
     const result = keywords ? await productService.search(keywords, page, size) : await productService.findAll(page, size);
