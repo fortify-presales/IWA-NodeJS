@@ -1,0 +1,34 @@
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/admin">Admin</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">User Management</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
+<h2>User Management</h2>
+<form class="form-inline mb-3" method="GET" action="/admin/users">
+  <input type="text" name="keywords" class="form-control mr-2" placeholder="Search users..." value="<%= keywords %>">
+  <button type="submit" class="btn btn-primary">Search</button>
+</form>
+<!-- INSECURE: keywords reflected unescaped (XSS CWE-79) -->
+<% if (keywords) { %><p>Results for: <%- keywords %></p><% } %>
+<table class="table table-sm">
+  <thead><tr><th>Username</th><th>Email</th><th>Roles</th><th>Enabled</th><th>Actions</th></tr></thead>
+  <tbody>
+  <% for (const u of users) { %>
+  <tr>
+    <td><%= u.username %></td>
+    <td><%= u.email %></td>
+    <!-- INSECURE: stored XSS — user data rendered unescaped in admin (CWE-79) -->
+    <td><%- (u.authorities || []).map(a => a.name).join(', ') %></td>
+    <td><%= u.enabled ? '✓' : '✗' %></td>
+    <td><a href="/api/v3/users/<%= u.id %>" class="btn btn-sm btn-info">View</a></td>
+  </tr>
+  <% } %>
+  </tbody>
+</table>
+  </div>
+</div>

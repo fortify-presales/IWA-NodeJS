@@ -1,0 +1,16 @@
+export enum AuthorityType {
+  ROLE_ADMIN = 'ROLE_ADMIN',
+  ROLE_USER = 'ROLE_USER',
+  ROLE_API = 'ROLE_API',
+  ROLE_GUEST = 'ROLE_GUEST',
+  ROLE_CUSTOMER = 'ROLE_CUSTOMER',
+  ROLE_SUPERVISOR = 'ROLE_SUPERVISOR',
+  ROLE_TEST = 'ROLE_TEST',
+}
+
+export enum MfaType {
+  MFA_NONE = 'MFA_NONE',
+  MFA_EMAIL = 'MFA_EMAIL',
+  MFA_SMS = 'MFA_SMS',
+  MFA_APP = 'MFA_APP',
+}

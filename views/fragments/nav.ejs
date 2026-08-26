@@ -1,0 +1,86 @@
+<div class="site-navbar py-2">
+  <div class="search-wrap">
+    <div class="container">
+      <a href="#" class="search-close js-search-close"><span class="icon-close2"></span></a>
+      <form action="/products" method="GET">
+        <input type="text" class="form-control" name="keywords" id="nav-keywords" placeholder="Search keyword(s) and hit enter...">
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="logo">
+        <div class="site-logo">
+          <a class="navbar-brand js-logo-clone" href="/" aria-label="<%= appName %>">
+            <img src="/img/logo.png" alt="<%= appName %>">
+          </a>
+        </div>
+      </div>
+
+      <div class="main-nav d-none d-lg-block">
+        <nav class="site-navigation text-right text-md-center" role="navigation">
+          <ul class="site-menu js-clone-nav d-none d-lg-block">
+            <li><a href="/products">Shop</a></li>
+            <li><a href="/prescriptions">Prescriptions</a></li>
+            <li><a href="/services">Services</a></li>
+            <li><a href="/advice">Advice</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="site-top-icons">
+        <ul>
+          <li>
+            <a href="#" class="icons-btn d-inline-block js-search-open" aria-label="Search">
+              <span class="icon-search"></span>
+            </a>
+          </li>
+          <li>
+            <div class="has-children">
+              <% if (user) { %>
+                <% const roles = (user.authorities || []).map(a => a.name); %>
+                <a href="/user/home" class="icons-menu d-inline-block" aria-label="My Account">
+                  <span class="icon-account_circle"></span>
+                  <span class="my-account-text"><%= user.firstName || user.username %></span>
+                </a>
+                <ul class="dropdown">
+                  <li><a href="/user/home"><i class="fas fa-home fa-fw"></i> Home</a></li>
+                  <li><a href="/user/profile"><i class="fas fa-user fa-fw"></i> Profile</a></li>
+                  <li><a href="/user/orders"><i class="fas fa-list-alt fa-fw"></i> Orders</a></li>
+                  <li><a href="/user/messages"><i class="fas fa-envelope fa-fw"></i> Messages</a></li>
+                  <% if (roles.includes('ROLE_ADMIN')) { %>
+                    <li><a href="/admin"><i class="fas fa-tools fa-fw"></i> Site Administration</a></li>
+                  <% } %>
+                  <li><a target="_blank" href="/swagger-ui"><i class="fas fa-code fa-fw"></i> API Explorer</a></li>
+                  <li><a href="/logout"><i class="fas fa-sign-out-alt fa-fw"></i> Logout</a></li>
+                </ul>
+              <% } else { %>
+                <a href="/login" class="icons-menu d-inline-block" aria-label="Login">
+                  <span class="icon-account_circle"></span>
+                  <span class="my-account-text">My Account</span>
+                </a>
+                <ul class="dropdown">
+                  <li><a href="/login"><i class="fas fa-sign-in-alt fa-fw"></i> Login</a></li>
+                  <li><a href="/user/register"><i class="fas fa-user-plus fa-fw"></i> Register</a></li>
+                  <li><a target="_blank" href="/swagger-ui"><i class="fas fa-code fa-fw"></i> API Explorer</a></li>
+                </ul>
+              <% } %>
+            </div>
+          </li>
+          <li>
+            <a href="/cart" class="icons-btn d-inline-block site-cart" aria-label="Cart">
+              <span class="icon-shopping-cart"></span>
+              <span id="shopping-cart-count" class="count"><%= typeof cartCount === 'number' ? cartCount : 0 %></span>
+            </a>
+          </li>
+          <li>
+            <a href="#" class="site-menu-toggle js-menu-toggle ml-3 d-inline-block d-lg-none" aria-label="Toggle Menu">
+              <span class="icon-menu"></span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

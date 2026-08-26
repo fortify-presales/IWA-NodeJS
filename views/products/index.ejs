@@ -1,0 +1,83 @@
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/products">Shop</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
+    <!-- INSECURE: keywords reflected unescaped (XSS CWE-79) -->
+    <% if (keywords) { %>
+      <div class="row pt-2">
+        <div class="col-md-12 text-center">
+          <h2>Searching for: <span class="bg-light text-dark"><%- keywords %></span></h2>
+        </div>
+      </div>
+    <% } %>
+
+    <div class="row d-flex justify-content-center">
+      <form id="search" class="col-md-10" method="GET" action="/products">
+        <div class="card p-3 py-4">
+          <div class="row g-3 mt-2">
+            <div class="input-group">
+              <div class="col-md-9">
+                <input type="text" class="form-control" name="keywords" placeholder="Enter search keywords" value="<%= keywords %>">
+              </div>
+              <div class="col-md-3">
+                <button class="btn btn-secondary btn-block" type="submit">Search</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="row pt-5">
+      <% for (const product of products) { %>
+        <div class="col-sm-6 col-lg-4 text-center item mb-4">
+          <% if (product.onSale) { %><span class="tag">Sale</span><% } %>
+          <% const imageSrc = product.image ? (product.image.startsWith('/img/') ? product.image : `/img/products/${product.image}`) : '/img/awaiting-image-sm.png'; %>
+          <a href="/products/<%= product.id %>">
+            <img src="<%= imageSrc %>" alt="<%= product.name %>" class="img-thumbnail">
+          </a>
+          <h3 class="text-dark"><a href="/products/<%= product.id %>"><%= product.name %></a></h3>
+          <p class="price">
+            <% if (product.onSale) { %>
+              <del><%= currency %> <%= Number(product.price).toFixed(2) %></del> &mdash;
+              <span><%= currency %> <%= Number(product.salePrice).toFixed(2) %></span>
+            <% } else { %>
+              <span><%= currency %> <%= Number(product.price).toFixed(2) %></span>
+            <% } %>
+          </p>
+          <form method="POST" action="/cart/add" class="mt-2">
+            <input type="hidden" name="productId" value="<%= product.id %>">
+            <input type="hidden" name="qty" value="1">
+            <button type="submit" class="btn btn-sm btn-primary">Add to Cart</button>
+          </form>
+        </div>
+      <% } %>
+    </div>
+
+    <% if (!products.length) { %><div class="alert alert-info">No products found.</div><% } %>
+
+    <div class="row mt-5">
+      <div class="col-md-12 text-center">
+        <div class="site-block-27">
+          <%- include('../fragments/pagination') %>
+        </div>
+      </div>
+    </div>
+
+    <div class="row pt-4">
+      <div class="col-md-12">
+        <% if (!keywords) { %>
+          <h5>Showing <%= products.length %> products</h5>
+        <% } else { %>
+          <h5>Found <%= products.length %> products</h5>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

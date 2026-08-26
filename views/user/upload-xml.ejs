@@ -1,0 +1,27 @@
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/user/home">My Account</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Upload XML File</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8">
+        <h2 class="text-black mb-4">Upload XML File</h2>
+        <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+        <!-- INSECURE: XXE (CWE-611) — XML parsed with external entities enabled -->
+        <form method="POST" action="/user/upload-xml-file" enctype="multipart/form-data">
+          <div class="form-group"><label>XML File</label><input type="file" name="file" accept=".xml" class="form-control-file" required></div>
+          <button type="submit" class="btn btn-primary">Upload &amp; Parse</button>
+        </form>
+        <% if (typeof parsed !== 'undefined' && parsed) { %>
+          <h5 class="mt-3">Parsed Result:</h5>
+          <pre class="bg-light p-3"><%= parsed %></pre>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

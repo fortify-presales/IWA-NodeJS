@@ -1,0 +1,28 @@
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/user/home">My Account</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Command Shell</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-10">
+        <h2 class="text-black mb-4">Command Shell</h2>
+        <!-- INSECURE: OS command injection (CWE-78) -->
+        <div class="alert alert-warning">⚠️ This page intentionally demonstrates command injection.</div>
+        <form method="POST" action="/user/command-shell">
+          <div class="form-group"><label>Command</label><input type="text" name="cmd" class="form-control" placeholder="ls -la" value=""></div>
+          <button type="submit" class="btn btn-danger">Execute</button>
+        </form>
+        <% if (output) { %>
+          <h5 class="mt-3">Output:</h5>
+          <!-- INSECURE: output rendered unescaped (XSS CWE-79) -->
+          <pre class="bg-dark text-white p-3"><%- output %></pre>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,30 @@
+name: Fortify SAST/SCA Scan
+
+on:
+  workflow_dispatch:
+  #schedule:
+  #  - cron: '0 2 * * 1'
+
+jobs:
+  fortify-sast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Fortify Tools
+        uses: fortify/github-action/setup@v1
+        with:
+          tool-definitions: https://github.com/fortify/tool-definitions/releases/latest/download/tool-definitions.yaml
+          export-path: true
+          fcli: latest
+          scancentral-client: latest
+
+      - name: Perform Fortify ScanCentral SAST Scan
+        uses: fortify/github-action/sc-sast-scan@v1
+        env:
+          SC_SAST_TOKEN: ${{ secrets.SC_SAST_TOKEN }}
+          SCSAST_URL: ${{ secrets.SCSAST_URL }}
+          SCSAST_SENSOR_VERSION: 23.1
+          DO_WAIT: true
+          DO_EXPORT: true
+

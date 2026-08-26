@@ -1,0 +1,28 @@
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/user/home">My Account</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Security Settings</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8">
+        <h2 class="text-black mb-4">Security Settings</h2>
+        <p><strong>Current MFA:</strong> <%= user.mfaType %></p>
+        <% if (qrCode !== null) { %>
+          <p>Scan this QR code with your authenticator app:</p>
+          <img src="<%= qrCode %>" alt="QR Code" class="mb-3">
+          <p>Secret: <code><%= secret %></code></p>
+        <% } else { %>
+          <form method="POST" action="/user/security/enable-mfa">
+            <input type="hidden" name="type" value="app">
+            <button type="submit" class="btn btn-primary">Enable TOTP MFA</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

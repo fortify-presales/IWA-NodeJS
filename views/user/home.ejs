@@ -1,0 +1,19 @@
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/">Home</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">My Account</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
+    <h2 class="text-black mb-4">My Account</h2>
+    <div class="row">
+      <div class="col-md-3 mb-4"><div class="card text-center p-3"><i class="fas fa-user fa-2x mb-2 text-primary"></i><br><a href="/user/profile">Profile</a></div></div>
+      <div class="col-md-3 mb-4"><div class="card text-center p-3"><i class="fas fa-shopping-bag fa-2x mb-2 text-primary"></i><br><a href="/user/orders">Orders</a></div></div>
+      <div class="col-md-3 mb-4"><div class="card text-center p-3"><i class="fas fa-envelope fa-2x mb-2 text-primary"></i><br><a href="/user/messages">Messages <% if (unreadMessages > 0) { %><span class="badge badge-danger"><%= unreadMessages %></span><% } %></a></div></div>
+      <div class="col-md-3 mb-4"><div class="card text-center p-3"><i class="fas fa-star fa-2x mb-2 text-primary"></i><br><a href="/user/reviews">Reviews</a></div></div>
+    </div>
+  </div>
+</div>

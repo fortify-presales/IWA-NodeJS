@@ -1,0 +1,11 @@
+<% if (meta && meta.totalPages > 1) { %>
+<nav>
+  <ul class="pagination">
+    <% for (let p = 1; p <= meta.totalPages; p += 1) { %>
+      <li class="page-item <%= p === meta.page ? 'active' : '' %>">
+        <a class="page-link" href="<%= baseUrl %>?page=<%= p %>&size=<%= meta.size %><%= extraQuery ? `&${extraQuery}` : '' %>"><%= p %></a>
+      </li>
+    <% } %>
+  </ul>
+</nav>
+<% } %>

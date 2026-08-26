@@ -1,0 +1,22 @@
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/admin">Admin</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Command Shell</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
+<h2>Admin Command Shell</h2>
+<div class="alert alert-danger">⚠️ INSECURE: OS Command Injection (CWE-78)</div>
+<form method="POST" action="/admin/command-shell">
+  <div class="form-group"><label>Command</label><input type="text" name="cmd" class="form-control" placeholder="ls -la"></div>
+  <button type="submit" class="btn btn-danger">Execute</button>
+</form>
+<% if (output) { %>
+<!-- INSECURE: output rendered unescaped (XSS CWE-79) -->
+<pre class="bg-dark text-white p-3 mt-3"><%- output %></pre>
+<% } %>
+  </div>
+</div>

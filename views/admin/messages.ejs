@@ -1,0 +1,27 @@
+<div class="bg-light py-3 mb-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0"><a href="/admin">Admin</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Message Management</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section-sm">
+  <div class="container">
+<h2>Message Management</h2>
+<table class="table table-sm">
+  <thead><tr><th>User</th><th>Message</th><th>Date</th><th>Read</th></tr></thead>
+  <tbody>
+  <% for (const m of messages) { %>
+  <tr>
+    <td><%= m.user?.username %></td>
+    <!-- INSECURE: stored XSS (CWE-79) -->
+    <td><%- m.text %></td>
+    <td><%= m.sentDate?.toLocaleString?.() %></td>
+    <td><%= m.read ? '✓' : '✗' %></td>
+  </tr>
+  <% } %>
+  </tbody>
+</table>
+  </div>
+</div>

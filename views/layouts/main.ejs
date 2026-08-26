@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> — <%= appName %></title>
+  <link rel="shortcut icon" href="/img/favicons/favicon.ico">
+  <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css">
+  <link rel="stylesheet" href="/css/icomoon/style.css">
+  <link rel="stylesheet" href="/css/owl.carousel.min.css">
+  <link rel="stylesheet" href="/css/owl.theme.default.min.css">
+  <link rel="stylesheet" href="/css/star-rating.min.css">
+  <link rel="stylesheet" href="/css/star-rating-theme.min.css">
+  <link rel="stylesheet" href="/css/iwa.css">
+</head>
+<body>
+  <div class="site-wrap d-flex flex-column min-vh-100">
+    <%- include('../fragments/nav') %>
+
+    <main class="flex-fill">
+      <% if (locals.flash && locals.flash.success) { %>
+        <div class="container pt-3"><div class="alert alert-success auto-dismiss"><%= locals.flash.success %></div></div>
+      <% } %>
+      <% if (locals.flash && locals.flash.error) { %>
+        <div class="container pt-3"><div class="alert alert-danger auto-dismiss"><%= locals.flash.error %></div></div>
+      <% } %>
+      <%- body %>
+    </main>
+
+    <%- include('../fragments/footer') %>
+  </div>
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/lib/owl.carousel.min.js"></script>
+  <script src="/js/components/NewProducts.js"></script>
+  <script>
+    (function ($) {
+      $(function () {
+        if ($.fn.NewProducts && $('#new-products').length) {
+          $('#new-products').NewProducts({ currencySymbol: '<%= currency %>' });
+        }
+      });
+    })(jQuery);
+  </script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
