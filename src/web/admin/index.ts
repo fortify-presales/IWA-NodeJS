@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
@@ -21,10 +22,6 @@ const BACKDOOR_TOKEN = 'iwa-admin-backdoor-super-secret-token-cwe798';
 
 router.use(requireAdminAuth);
 
-async function renderList(res: Response, title: string, items: any[], columns: string[]) {
-  res.render('admin/users', { title, items, columns });
-}
-
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     res.render('admin/index', {
@@ -40,38 +37,42 @@ router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   } catch (err) { next(err); }
 });
 
-router.get('/users', async (_req: Request, res: Response, next: NextFunction) => {
+router.get('/users', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await renderList(res, 'Manage Users', await User.findAll({ include: [{ all: true }] }), ['username', 'email', 'enabled', 'verified']);
+    const keywords = (req.query.keywords as string) || '';
+    const users = keywords
+      ? await User.findAll({ where: { username: { [Op.like]: `%${keywords}%` } }, include: [{ all: true }] })
+      : await User.findAll({ include: [{ all: true }] });
+    res.render('admin/users', { title: 'Manage Users', users, keywords });
   } catch (err) { next(err); }
 });
 
 router.get('/products', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    await renderList(res, 'Manage Products', await Product.findAll(), ['code', 'name', 'price', 'inStock']);
+    res.render('admin/products', { title: 'Manage Products', products: await Product.findAll() });
   } catch (err) { next(err); }
 });
 
 router.get('/orders', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    await renderList(res, 'Manage Orders', await Order.findAll(), ['orderNum', 'amount', 'shipped', 'userId']);
+    res.render('admin/orders', { title: 'Manage Orders', orders: await Order.findAll() });
   } catch (err) { next(err); }
 });
 
 router.get('/reviews', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    await renderList(res, 'Manage Reviews', await Review.findAll(), ['rating', 'visible', 'productId', 'userId']);
+    res.render('admin/reviews', { title: 'Manage Reviews', reviews: await Review.findAll({ include: [{ all: true }] }) });
   } catch (err) { next(err); }
 });
 
 router.get('/messages', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    await renderList(res, 'Manage Messages', await Message.findAll(), ['text', 'read', 'userId']);
+    res.render('admin/messages', { title: 'Manage Messages', messages: await Message.findAll({ include: [{ all: true }] }) });
   } catch (err) { next(err); }
 });
 
 router.get('/backup', (_req: Request, res: Response) => {
-  res.render('admin/backup', { title: 'Backup', files: [] });
+  res.render('admin/backup', { title: 'Backup', result: null });
 });
 
 router.post('/backup', upload.single('archive'), (req: Request, res: Response, next: NextFunction) => {
@@ -95,7 +96,7 @@ router.post('/backup', upload.single('archive'), (req: Request, res: Response, n
       fs.writeFileSync(outputPath, JSON.stringify({ createdAt: new Date().toISOString() }));
       created.push(outputPath);
     }
-    res.render('admin/backup', { title: 'Backup', files: created });
+    res.render('admin/backup', { title: 'Backup', result: created.join('\n') });
   } catch (err) { next(err); }
 });
 
@@ -140,7 +141,7 @@ router.post('/log', (req: Request, res: Response) => {
   // INSECURE: log injection via raw user-controlled input (CWE-117)
   // Purpose: demonstrates log forging for Fortify DAST/SAST
   // Fix: Strip CR/LF and use structured logging before writing
-  fs.appendFileSync('./logs/iwa.log', String(req.body.message ?? '') + '\n');
+  fs.appendFileSync('./logs/iwa.log', String(req.body.val ?? '') + '\n');
   res.redirect('/admin/log');
 });
 
@@ -153,7 +154,7 @@ router.post('/command-shell', async (req: Request, res: Response) => {
     // INSECURE: OS command injection via child_process.exec on raw input (CWE-78)
     // Purpose: demonstrates command injection for Fortify DAST/SAST
     // Fix: Avoid shell execution and use safe parameterized system APIs only
-    const { stdout, stderr } = await execAsync(String(req.body.command ?? ''));
+    const { stdout, stderr } = await execAsync(String(req.body.cmd ?? ''));
     res.render('admin/command-shell', { title: 'Admin Command Shell', output: stdout || stderr });
   } catch (err: any) {
     res.render('admin/command-shell', { title: 'Admin Command Shell', output: err.stdout || err.stderr || err.message });

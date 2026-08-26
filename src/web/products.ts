@@ -21,6 +21,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       keywords,
       meta: buildPaginationMeta(page, size, result.count),
       baseUrl: '/products',
+      extraQuery: keywords ? `keywords=${encodeURIComponent(keywords)}` : '',
     });
   } catch (err) { next(err); }
 });

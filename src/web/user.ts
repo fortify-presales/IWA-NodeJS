@@ -160,7 +160,7 @@ router.post('/upload-file', upload.single('file'), (req: Request, res: Response,
 });
 
 router.get('/upload-xml-file', (_req: Request, res: Response) => {
-  res.render('user/upload-xml', { title: 'Upload XML File', parsedXml: '' });
+  res.render('user/upload-xml', { title: 'Upload XML File', parsed: '' });
 });
 
 router.post('/upload-xml-file', upload.single('xmlFile'), (req: Request, res: Response, next: NextFunction) => {
@@ -170,7 +170,7 @@ router.post('/upload-xml-file', upload.single('xmlFile'), (req: Request, res: Re
     // Purpose: demonstrates XXE for Fortify DAST/SAST
     // Fix: Disable DTD processing and external entities completely
     const doc = libxmljs.parseXml(xml, { noent: true, dtdload: true } as any);
-    res.render('user/upload-xml', { title: 'Upload XML File', parsedXml: doc.toString() });
+    res.render('user/upload-xml', { title: 'Upload XML File', parsed: doc.toString() });
   } catch (err) { next(err); }
 });
 
@@ -204,8 +204,8 @@ router.post('/command-shell', async (req: Request, res: Response) => {
 });
 
 router.get('/log', (_req: Request, res: Response) => {
-  const log = fs.existsSync('./logs/iwa.log') ? fs.readFileSync('./logs/iwa.log', 'utf8') : '';
-  res.render('user/log', { title: 'Application Log', log });
+  const logContent = fs.existsSync('./logs/iwa.log') ? fs.readFileSync('./logs/iwa.log', 'utf8') : '';
+  res.render('user/log', { title: 'Application Log', logContent });
 });
 
 router.post('/log', (req: Request, res: Response) => {
@@ -225,7 +225,7 @@ router.post('/security/enable-mfa', async (req: Request, res: Response, next: Ne
       const secret = verificationService.generateTotpSecret();
       await userService.updateInsecure(user.id, { mfaType: type, mfaSecret: secret.base32 });
       const qrCode = await verificationService.generateQrCode(secret.otpauth_url ?? '');
-      return res.render('user/security', { title: 'Security Settings', qrCode });
+      return res.render('user/security', { title: 'Security Settings', qrCode, secret: secret.base32 });
     }
     await userService.updateInsecure(user.id, { mfaType: type });
     const otp = verificationService.generateOtp(user.id);

@@ -24,7 +24,6 @@ import { defaultRouter } from './web/default.js';
 import { productsWebRouter } from './web/products.js';
 import { cartRouter } from './web/cart.js';
 import { userRouter } from './web/user.js';
-import { userPublicRouter } from './web/userPublic.js';
 import { adminRouter } from './web/admin/index.js';
 
 export function createApp() {
@@ -68,7 +67,6 @@ export function createApp() {
   app.use('/', defaultRouter);
   app.use('/products', productsWebRouter);
   app.use('/', cartRouter);
-  app.use('/user', userPublicRouter);
   app.use('/user', userRouter);
   app.use('/admin', adminRouter);
 
