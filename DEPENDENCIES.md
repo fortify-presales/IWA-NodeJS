@@ -1,7 +1,6 @@
 # Deliberately Outdated Dependencies
 
-This application intentionally uses outdated packages with known vulnerabilities for SCA/Debricked
-scanning demonstrations. **Do NOT update these packages.**
+This application intentionally uses outdated packages with known vulnerabilities for Fortify Software Composition Analysis (SCA) scanning demonstrations. **Do NOT update these packages.**
 
 | Package | Version | CVE / Advisory | Reason for keeping |
 |---------|---------|-----------------|-------------------|

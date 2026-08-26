@@ -9,11 +9,11 @@ IWA Pharmacy Direct is a deliberately insecure e-commerce web application — a 
 [IWA-Java](https://github.com/fortify/IWA-Java) Spring Boot demo app by OpenText/Fortify.
 It is used to demonstrate and teach application security tools including:
 
-- **Fortify Static Code Analyzer (SCA/SAST)** — finds code-level vulnerabilities
+- **Fortify SAST** — finds code-level vulnerabilities
+- **Fortify DAST** — finds runtime vulnerabilities
+- **Fortify Software Composition Analysis (SCA)** — open-source vulnerability scanning
 - **Fortify on Demand (FoD)** — cloud-based SAST/DAST
-- **ScanCentral SAST/DAST** — enterprise scanning
-- **WebInspect** — DAST scanning
-- **Debricked** — SCA/open-source vulnerability scanning
+- **ScanCentral SAST/DAST** — enterprise SAST/DAST scanning
 
 All vulnerabilities are **intentional and must be preserved** for teaching purposes.
 
@@ -91,7 +91,7 @@ See [DEMO.md](DEMO.md) for detailed exploitation walkthroughs.
 ./bin/scancentral-sast-scan.sh
 
 # FoD SAST + SCA
-./bin/fod-scan.ps1
+./bin/fod-scan.sh
 ```
 
 ## Security Policy

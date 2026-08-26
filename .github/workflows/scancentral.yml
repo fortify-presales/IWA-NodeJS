@@ -2,8 +2,8 @@ name: Fortify SAST/SCA Scan
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * 1'
+  #schedule:
+  #  - cron: '0 2 * * 1'
 
 jobs:
   fortify-sast:
@@ -28,7 +28,3 @@ jobs:
           DO_WAIT: true
           DO_EXPORT: true
 
-      - name: Perform Debricked SCA Scan
-        uses: debricked/actions/scan@v3
-        env:
-          DEBRICKED_TOKEN: ${{ secrets.DEBRICKED_TOKEN }}
