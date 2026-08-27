@@ -9,22 +9,30 @@ import { MfaType } from '../models/enums.js';
 
 const router = Router();
 
+function appLoginPath(redirect: unknown, fallback: string) {
+  return String(redirect ?? '').startsWith('/app/') ? fallback.replace(/^\//, '/app/') : fallback;
+}
+
 router.get('/', (req: Request, res: Response) => {
-  res.render('index', { title: 'Home' });
+  res.redirect(301, '/app/');
 });
 
-router.get('/advice', (req, res) => res.render('advice', { title: 'Health Advice' }));
-router.get('/services', (req, res) => res.render('services', { title: 'Our Services' }));
-router.get('/prescriptions', (req, res) => res.render('prescriptions', { title: 'Prescriptions' }));
-router.get('/vulnerabilities', (req, res) => res.render('vulnerabilities', { title: 'Vulnerabilities' }));
+router.get('/advice', (_req, res) => res.redirect(301, '/app/advice'));
+router.get('/services', (_req, res) => res.redirect(301, '/app/services'));
+router.get('/prescriptions', (_req, res) => res.redirect(301, '/app/prescriptions'));
+router.get('/vulnerabilities', (_req, res) => res.redirect(301, '/app/vulnerabilities'));
 
 // GET /login
 router.get('/login', (req: Request, res: Response) => {
-  if (req.isAuthenticated()) return res.redirect('/user/home');
+  if (req.isAuthenticated()) return res.redirect('/app/user/home');
   // INSECURE: reflected XSS — error rendered unescaped (CWE-79)
   const error = req.query.error as string || '';
   const message = req.query.message as string || '';
-  res.render('login', { title: 'Login', error, redirect: req.query.redirect || '', message });
+  const params = new URLSearchParams();
+  if (error) params.set('error', error);
+  if (message) params.set('message', message);
+  if (req.query.redirect) params.set('redirect', String(req.query.redirect));
+  res.redirect(`/app/login${params.size ? `?${params.toString()}` : ''}`);
 });
 
 // POST /login
@@ -35,7 +43,8 @@ router.post('/login', (req: Request, res: Response, next: NextFunction) => {
     if (!user) {
       const msg = encodeURIComponent(info?.message ?? 'Invalid credentials');
       // INSECURE: error message reflected in URL param (CWE-79)
-      return res.redirect(`/login?error=${msg}&redirect=${req.body.redirect || ''}`);
+      const loginPath = appLoginPath(req.body.redirect, '/login');
+      return res.redirect(`${loginPath}?error=${msg}&redirect=${req.body.redirect || ''}`);
     }
     req.logIn(user, async (err) => {
       if (err) return next(err);
@@ -58,7 +67,7 @@ router.post('/login', (req: Request, res: Response, next: NextFunction) => {
         if (user.mfaType === MfaType.MFA_SMS) await smsService.sendOtp(user.phone, otp);
 
         req.logout((err) => { if (err) logger.error(err); });
-        return res.redirect('/login-mfa');
+        return res.redirect(appLoginPath(req.body.redirect, '/login-mfa'));
       }
 
       // INSECURE: open redirect — honours unvalidated redirect parameter (CWE-601)
@@ -72,9 +81,9 @@ router.post('/login', (req: Request, res: Response, next: NextFunction) => {
 
 // GET /login-mfa
 router.get('/login-mfa', (req: Request, res: Response) => {
-  if (!(req.session as any).pendingMfaUserId) return res.redirect('/login');
+  if (!(req.session as any).pendingMfaUserId) return res.redirect('/app/login');
   const error = req.query.error as string || '';
-  res.render('login-mfa', { title: 'Two-Factor Authentication', error });
+  res.redirect('/app/login-mfa' + (error ? '?error=' + encodeURIComponent(error) : ''));
 });
 
 // POST /login-mfa
@@ -83,13 +92,13 @@ router.post('/login-mfa', async (req: Request, res: Response, next: NextFunction
   const userId = session.pendingMfaUserId;
   const mfaType = session.pendingMfaType;
   const redirect = session.pendingRedirect || '/user/home';
-  if (!userId) return res.redirect('/login');
+  if (!userId) return res.redirect(appLoginPath(redirect, '/login'));
 
   try {
     const { User } = await import('../models/User.js');
     const { Authority } = await import('../models/Authority.js');
     const user = await User.findByPk(userId, { include: [{ model: Authority }] });
-    if (!user) return res.redirect('/login');
+    if (!user) return res.redirect(appLoginPath(redirect, '/login'));
 
     const code = req.body.code as string;
     let valid = false;
@@ -100,7 +109,7 @@ router.post('/login-mfa', async (req: Request, res: Response, next: NextFunction
     }
 
     if (!valid) {
-      return res.redirect('/login-mfa?error=' + encodeURIComponent('Invalid code'));
+      return res.redirect(appLoginPath(redirect, '/login-mfa') + '?error=' + encodeURIComponent('Invalid code'));
     }
 
     delete session.pendingMfaUserId;

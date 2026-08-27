@@ -1,33 +1,35 @@
 import fs from 'fs';
 import path from 'path';
-import { exec, execSync } from 'child_process';
-import { promisify } from 'util';
+import { execSync } from 'child_process';
 import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import libxmljs from 'libxmljs2';
 import serialize from 'node-serialize';
 import { User } from '../models/User.js';
-import { Review } from '../models/Review.js';
-import { Product } from '../models/Product.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { userService } from '../services/UserService.js';
 import { orderService } from '../services/OrderService.js';
-import { messageService } from '../services/MessageService.js';
-import { reviewService } from '../services/ReviewService.js';
 import { storageService } from '../services/StorageService.js';
 import { pdfService } from '../services/PdfService.js';
 import { verificationService } from '../services/VerificationService.js';
 import { emailService } from '../services/EmailService.js';
 import { smsService } from '../services/SmsService.js';
-import { env } from '../config/env.js';
 import { MfaType } from '../models/enums.js';
 
-const execAsync = promisify(exec);
 const upload = multer({ storage: multer.memoryStorage() });
 const router = Router();
 
+function getAppReturnTo(req: Request, fallback: string) {
+  const returnTo = String(req.body.appReturnTo ?? '');
+  return returnTo.startsWith('/app/user/') || returnTo === '/app/login' ? returnTo : fallback;
+}
+
+function setReactResult(req: Request, result: Record<string, unknown>) {
+  (req.session as any).reactResult = result;
+}
+
 router.get('/register', (_req: Request, res: Response) => {
-  res.render('user/register', { title: 'Register' });
+  res.redirect(301, '/app/register');
 });
 
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
@@ -37,6 +39,9 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     (req.session as any).pendingVerificationToken = verificationToken;
     await emailService.sendVerification(user.email, verificationToken);
     (req.session as any).flashSuccess = `Registration successful. Demo verification token: ${verificationToken}`;
+    if (req.body.appReturnTo === '/app/login') {
+      return res.redirect('/app/login?message=' + encodeURIComponent(`Registration successful. Demo verification token: ${verificationToken}`));
+    }
     res.redirect('/login');
   } catch (err) { next(err); }
 });
@@ -60,7 +65,7 @@ router.get('/verify', async (req: Request, res: Response, next: NextFunction) =>
 });
 
 router.get('/forgot-password', (_req: Request, res: Response) => {
-  res.render('user/forgot-password', { title: 'Forgot Password' });
+  res.redirect(301, '/app/forgot-password');
 });
 
 router.post('/forgot-password', async (req: Request, res: Response, next: NextFunction) => {
@@ -71,6 +76,9 @@ router.post('/forgot-password', async (req: Request, res: Response, next: NextFu
       await emailService.sendPasswordReset(user.email, token);
       (req.session as any).flashSuccess = `Password reset requested. Demo token: ${token}`;
     }
+    if (req.body.appReturnTo === '/app/login') {
+      return res.redirect('/app/login?message=' + encodeURIComponent('Password reset requested. Check demo logs for token.'));
+    }
     res.redirect('/login');
   } catch (err) { next(err); }
 });
@@ -79,18 +87,16 @@ router.use(requireAuth);
 
 router.get('/home', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = req.user as any;
-    const unread = await messageService.countUnread(user.id);
-    res.render('user/home', { title: 'My Account', unreadMessages: unread });
+    res.redirect(301, '/app/user/home');
   } catch (err) { next(err); }
 });
 
 router.get('/profile', (req: Request, res: Response) => {
-  res.render('user/profile', { title: 'My Profile', profileUser: req.user });
+  res.redirect(301, '/app/user/profile');
 });
 
 router.get('/edit-profile', (req: Request, res: Response) => {
-  res.render('user/edit-profile', { title: 'Edit Profile', profileUser: req.user });
+  res.redirect(301, '/app/user/edit-profile');
 });
 
 router.post('/edit-profile', async (req: Request, res: Response, next: NextFunction) => {
@@ -98,12 +104,12 @@ router.post('/edit-profile', async (req: Request, res: Response, next: NextFunct
     const user = req.user as any;
     await userService.update(user.id, req.body);
     (req.session as any).flashSuccess = 'Profile updated';
-    res.redirect('/user/profile');
+    res.redirect(getAppReturnTo(req, '/user/profile'));
   } catch (err) { next(err); }
 });
 
 router.get('/change-password', (_req: Request, res: Response) => {
-  res.render('user/change-password', { title: 'Change Password' });
+  res.redirect(301, '/app/user/change-password');
 });
 
 router.post('/change-password', async (req: Request, res: Response, next: NextFunction) => {
@@ -111,15 +117,13 @@ router.post('/change-password', async (req: Request, res: Response, next: NextFu
     const user = req.user as any;
     await userService.changePassword(user.id, req.body.newPassword);
     (req.session as any).flashSuccess = 'Password changed';
-    res.redirect('/user/profile');
+    res.redirect(getAppReturnTo(req, '/user/profile'));
   } catch (err) { next(err); }
 });
 
 router.get('/orders', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = req.user as any;
-    const orders = await orderService.findByUser(user.id);
-    res.render('user/orders', { title: 'My Orders', orders });
+    res.redirect(301, '/app/user/orders');
   } catch (err) { next(err); }
 });
 
@@ -135,22 +139,18 @@ router.get('/orders/:id/invoice.pdf', async (req: Request, res: Response, next: 
 
 router.get('/messages', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = req.user as any;
-    const messages = await messageService.findByUser(user.id);
-    res.render('user/messages', { title: 'My Messages', messages });
+    res.redirect(301, '/app/user/messages');
   } catch (err) { next(err); }
 });
 
 router.get('/reviews', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = req.user as any;
-    const reviews = await Review.findAll({ where: { userId: user.id }, include: [{ model: Product }] });
-    res.render('user/reviews', { title: 'My Reviews', reviews });
+    res.redirect(301, '/app/user/reviews');
   } catch (err) { next(err); }
 });
 
 router.get('/upload-file', (_req: Request, res: Response) => {
-  res.render('user/upload-file', { title: 'Upload File' });
+  res.redirect(301, '/app/user/upload-file');
 });
 
 router.post('/upload-file', upload.single('file'), (req: Request, res: Response, next: NextFunction) => {
@@ -163,12 +163,16 @@ router.post('/upload-file', upload.single('file'), (req: Request, res: Response,
       fs.writeFileSync(uploadPath, req.file.buffer);
       storageService.saveFile(req.file.originalname, req.file.buffer);
     }
+    if (req.body.appReturnTo) {
+      setReactResult(req, { kind: 'success', message: `File uploaded: ${req.file?.originalname}` });
+      return res.redirect(getAppReturnTo(req, '/user/upload-file'));
+    }
     res.render('user/upload-file', { title: 'Upload File', success: `File uploaded: ${req.file?.originalname}` });
   } catch (err) { next(err); }
 });
 
 router.get('/import-settings', (_req: Request, res: Response) => {
-  res.render('user/import-settings', { title: 'Import Settings', result: '' });
+  res.redirect(301, '/app/user/import-settings');
 });
 
 router.post('/import-settings', (req: Request, res: Response) => {
@@ -179,14 +183,22 @@ router.post('/import-settings', (req: Request, res: Response) => {
     const rawPayload = String(req.body.payload ?? '');
     const decoded = Buffer.from(rawPayload, 'base64').toString('utf8');
     const result = serialize.unserialize(decoded);
+    if (req.body.appReturnTo) {
+      setReactResult(req, { kind: 'result', content: JSON.stringify(result) });
+      return res.redirect(getAppReturnTo(req, '/user/import-settings'));
+    }
     res.render('user/import-settings', { title: 'Import Settings', result: JSON.stringify(result) });
   } catch (err: any) {
+    if (req.body.appReturnTo) {
+      setReactResult(req, { kind: 'error', content: err.message });
+      return res.redirect(getAppReturnTo(req, '/user/import-settings'));
+    }
     res.render('user/import-settings', { title: 'Import Settings', result: err.message });
   }
 });
 
 router.get('/upload-xml-file', (_req: Request, res: Response) => {
-  res.render('user/upload-xml', { title: 'Upload XML File', parsed: '' });
+  res.redirect(301, '/app/user/upload-xml-file');
 });
 
 router.post('/upload-xml-file', upload.single('xmlFile'), (req: Request, res: Response, next: NextFunction) => {
@@ -196,12 +208,16 @@ router.post('/upload-xml-file', upload.single('xmlFile'), (req: Request, res: Re
     // Purpose: demonstrates XXE for Fortify DAST/SAST
     // Fix: Disable DTD processing and external entities completely
     const doc = libxmljs.parseXml(xml, { noent: true, dtdload: true } as any);
+    if (req.body.appReturnTo) {
+      setReactResult(req, { kind: 'result', content: doc.toString() });
+      return res.redirect(getAppReturnTo(req, '/user/upload-xml-file'));
+    }
     res.render('user/upload-xml', { title: 'Upload XML File', parsed: doc.toString() });
   } catch (err) { next(err); }
 });
 
 router.get('/download-file', (_req: Request, res: Response) => {
-  res.render('user/download-file', { title: 'Download File', files: storageService.listFiles() });
+  res.redirect(301, '/app/user/download-file');
 });
 
 router.get('/files/download/unverified', (req: Request, res: Response, next: NextFunction) => {
@@ -214,7 +230,7 @@ router.get('/files/download/unverified', (req: Request, res: Response, next: Nex
 });
 
 router.get('/command-shell', (_req: Request, res: Response) => {
-  res.render('user/command-shell', { title: 'Command Shell', output: '' });
+  res.redirect(301, '/app/user/command-shell');
 });
 
 router.post('/command-shell', async (req: Request, res: Response) => {
@@ -224,15 +240,22 @@ router.post('/command-shell', async (req: Request, res: Response) => {
     // Fix: Never execute shell commands from untrusted input
     const command = String(req.body.command ?? req.body.cmd ?? '');
     const output = execSync(command, { encoding: 'utf8' });
+    if (req.body.appReturnTo) {
+      setReactResult(req, { kind: 'result', content: output });
+      return res.redirect(getAppReturnTo(req, '/user/command-shell'));
+    }
     res.render('user/command-shell', { title: 'Command Shell', output });
   } catch (err: any) {
+    if (req.body.appReturnTo) {
+      setReactResult(req, { kind: 'error', content: err.stdout || err.stderr || err.message });
+      return res.redirect(getAppReturnTo(req, '/user/command-shell'));
+    }
     res.render('user/command-shell', { title: 'Command Shell', output: err.stdout || err.stderr || err.message });
   }
 });
 
 router.get('/log', (_req: Request, res: Response) => {
-  const logContent = fs.existsSync('./logs/iwa.log') ? fs.readFileSync('./logs/iwa.log', 'utf8') : '';
-  res.render('user/log', { title: 'Application Log', logContent });
+  res.redirect(301, '/app/user/log');
 });
 
 router.post('/log', (req: Request, res: Response) => {
@@ -242,11 +265,11 @@ router.post('/log', (req: Request, res: Response) => {
   const msg = String(req.body.message ?? '');
   console.log('User log message: ' + msg);
   fs.appendFileSync('./logs/iwa.log', msg + '\n');
-  res.redirect('/user/log');
+  res.redirect(getAppReturnTo(req, '/user/log'));
 });
 
 router.get('/security', (_req: Request, res: Response) => {
-  res.render('user/security', { title: 'Security Settings', qrCode: null });
+  res.redirect(301, '/app/user/security');
 });
 
 router.post('/security/enable-mfa', async (req: Request, res: Response, next: NextFunction) => {
@@ -257,6 +280,10 @@ router.post('/security/enable-mfa', async (req: Request, res: Response, next: Ne
       const secret = verificationService.generateTotpSecret();
       await userService.updateInsecure(user.id, { mfaType: type, mfaSecret: secret.base32 });
       const qrCode = await verificationService.generateQrCode(secret.otpauth_url ?? '');
+      if (req.body.appReturnTo) {
+        setReactResult(req, { kind: 'mfa', message: 'Scan this QR code with your authenticator app.', qrCode, secret: secret.base32 });
+        return res.redirect(getAppReturnTo(req, '/user/security'));
+      }
       return res.render('user/security', { title: 'Security Settings', qrCode, secret: secret.base32 });
     }
     await userService.updateInsecure(user.id, { mfaType: type });
@@ -264,7 +291,7 @@ router.post('/security/enable-mfa', async (req: Request, res: Response, next: Ne
     if (type === MfaType.MFA_EMAIL && user.email) await emailService.sendOtp(user.email, otp);
     if (type === MfaType.MFA_SMS && user.phone) await smsService.sendOtp(user.phone, otp);
     (req.session as any).flashSuccess = `Enabled MFA type ${type}`;
-    res.redirect('/user/security');
+    res.redirect(getAppReturnTo(req, '/user/security'));
   } catch (err) { next(err); }
 });
 

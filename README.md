@@ -35,6 +35,7 @@ cp .env.example .env
 ```bash
 npm run dev
 # App runs on http://localhost:8888
+# React UI is served at http://localhost:8888/app/
 ```
 
 ### Production
@@ -42,12 +43,14 @@ npm run dev
 npm run build
 npm start
 # App runs on http://localhost:8080
+# React UI is served at http://localhost:8080/app/
 ```
 
 ### Docker
 ```bash
 docker-compose up
 # App runs on http://localhost:8080
+# React UI is served at http://localhost:8080/app/
 ```
 
 ## Seeded Credentials
@@ -78,7 +81,8 @@ Key endpoints:
 
 ## Intentional Vulnerabilities
 
-Visit `/vulnerabilities` in the running app for a full list of all 27 planted vulnerabilities with reproduction steps.
+Visit `/app/vulnerabilities` in the running app for a full list of all 27 planted vulnerabilities with reproduction steps.
+Legacy browser routes redirect to their React `/app/*` equivalents during the frontend migration.
 See [DEMO.md](DEMO.md) for detailed exploitation walkthroughs.
 
 ## Fortify Scan Instructions

@@ -5,6 +5,7 @@ import { userService } from '../../services/UserService.js';
 import { authService } from '../../services/AuthService.js';
 import { apiResponse } from '../../utils/web.js';
 import { emailService } from '../../services/EmailService.js';
+import { env } from '../../config/env.js';
 
 const router = Router();
 
@@ -21,6 +22,37 @@ const router = Router();
  */
 router.get('/status', (req, res) => {
   res.json(apiResponse('success', 'Application is running', { status: 'UP' }));
+});
+
+/**
+ * @openapi
+ * /site/bootstrap:
+ *   get:
+ *     tags: [Site]
+ *     summary: Frontend bootstrap metadata
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Public app metadata and current browser session summary
+ */
+router.get('/bootstrap', (req: Request, res: Response) => {
+  const user = req.user as any;
+  const session = req.session as any;
+  res.json(apiResponse('success', 'OK', {
+    appName: env.appName,
+    appVersion: env.appVersion,
+    currency: env.appCurrency,
+    user: user ? {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      authorities: (user.authorities ?? []).map((authority: any) => authority.name),
+    } : null,
+    flash: {
+      success: session.flashSuccess,
+      error: session.flashError,
+    },
+  }));
 });
 
 /**
