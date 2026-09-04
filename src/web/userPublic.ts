@@ -7,7 +7,7 @@ const router = Router();
 
 router.get('/register', (req: Request, res: Response) => {
   if (req.isAuthenticated()) return res.redirect('/user/home');
-  res.render('user/register', { title: 'Register' });
+  res.redirect('/app/register');
 });
 
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
@@ -17,7 +17,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     res.redirect('/login?message=Registration successful. Please verify your email.');
   } catch (err: any) {
     if (err.name === 'SequelizeUniqueConstraintError') {
-      return res.render('user/register', { title: 'Register', error: 'Username or email already exists' });
+      return res.redirect('/app/register?error=' + encodeURIComponent('Username or email already exists'));
     }
     next(err);
   }
@@ -25,18 +25,18 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
 
 router.get('/verify', async (req: Request, res: Response) => {
   // Simplified: just mark verified
-  res.render('login', { title: 'Login', error: '', redirect: '', message: 'Account verified. Please login.' });
+  res.redirect('/app/login?message=' + encodeURIComponent('Account verified. Please login.'));
 });
 
 router.get('/forgot-password', (req: Request, res: Response) => {
-  res.render('user/forgot-password', { title: 'Forgot Password' });
+  res.redirect('/app/forgot-password');
 });
 
 router.post('/forgot-password', async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Lookup user by email — always respond with generic message to prevent user enumeration
     await userService.emailExists(req.body.email);
-    res.render('user/forgot-password', { title: 'Forgot Password', success: 'If that email exists, a reset link has been sent.' });
+    res.redirect('/app/login?message=' + encodeURIComponent('If that email exists, a reset link has been sent.'));
   } catch (err) { next(err); }
 });
 

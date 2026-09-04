@@ -85,6 +85,10 @@ Visit `/app/vulnerabilities` in the running app for a full list of all 27 plante
 Legacy browser routes redirect to their React `/app/*` equivalents during the frontend migration.
 See [DEMO.md](DEMO.md) for detailed exploitation walkthroughs.
 
+## Frontend Runtime
+
+The application UI is built with React and TypeScript from `frontend/src/` into `public/app/`. EJS, jQuery, Bootstrap, and legacy browser plugins are no longer part of the runtime. The `views/` directory is retained as historical training reference while intentionally vulnerable behaviors are preserved in the React frontend and backend routes.
+
 ## Fortify Scan Instructions
 
 ```bash
@@ -97,6 +101,14 @@ See [DEMO.md](DEMO.md) for detailed exploitation walkthroughs.
 # FoD SAST + SCA
 ./bin/fod-scan.sh
 ```
+
+## End-to-End Tests
+
+```bash
+npm run test:e2e
+```
+
+The Playwright suite builds the application, starts an isolated test server on port `8890`, and uses `data/e2e.sqlite` as its test database.
 
 ## Security Policy
 

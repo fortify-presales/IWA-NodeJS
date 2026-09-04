@@ -16,6 +16,8 @@ logs/
 
 # Test coverage
 coverage/
+playwright-report/
+test-results/
 
 # Misc
 .DS_Store

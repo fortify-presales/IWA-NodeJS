@@ -86,11 +86,8 @@ router.post('/backup', upload.single('archive'), (req: Request, res: Response, n
       fs.writeFileSync(outputPath, JSON.stringify({ createdAt: new Date().toISOString() }));
       created.push(outputPath);
     }
-    if (req.body.appReturnTo) {
-      setAdminReactResult(req, { kind: 'result', content: created.join('\n') });
-      return res.redirect(getAdminAppReturnTo(req, '/admin/backup'));
-    }
-    res.render('admin/backup', { title: 'Backup', result: created.join('\n') });
+    setAdminReactResult(req, { kind: 'result', content: created.join('\n') });
+    return res.redirect(getAdminAppReturnTo(req, '/app/admin/backup'));
   } catch (err) { next(err); }
 });
 
@@ -122,11 +119,8 @@ router.post('/diagnostics', async (req: Request, res: Response, next: NextFuncti
         }).on('error', err => resolve(err.message));
       });
     }
-    if (req.body.appReturnTo) {
-      setAdminReactResult(req, { kind: 'result', evalResult, fetchResult });
-      return res.redirect(getAdminAppReturnTo(req, '/admin/diagnostics'));
-    }
-    res.render('admin/diagnostics', { title: 'Diagnostics', evalResult, fetchResult });
+    setAdminReactResult(req, { kind: 'result', evalResult, fetchResult });
+    return res.redirect(getAdminAppReturnTo(req, '/app/admin/diagnostics'));
   } catch (err) { next(err); }
 });
 
@@ -156,17 +150,11 @@ router.post('/command-shell', async (req: Request, res: Response) => {
     // Fix: Avoid shell execution and use safe parameterized system APIs only
     const cmd = String(req.body.cmd ?? '');
     const output = execSync(cmd, { encoding: 'utf8' });
-    if (req.body.appReturnTo) {
-      setAdminReactResult(req, { kind: 'result', content: output });
-      return res.redirect(getAdminAppReturnTo(req, '/admin/command-shell'));
-    }
-    res.render('admin/command-shell', { title: 'Admin Command Shell', output });
+    setAdminReactResult(req, { kind: 'result', content: output });
+    return res.redirect(getAdminAppReturnTo(req, '/app/admin/command-shell'));
   } catch (err: any) {
-    if (req.body.appReturnTo) {
-      setAdminReactResult(req, { kind: 'error', content: err.stdout || err.stderr || err.message });
-      return res.redirect(getAdminAppReturnTo(req, '/admin/command-shell'));
-    }
-    res.render('admin/command-shell', { title: 'Admin Command Shell', output: err.stdout || err.stderr || err.message });
+    setAdminReactResult(req, { kind: 'error', content: err.stdout || err.stderr || err.message });
+    return res.redirect(getAdminAppReturnTo(req, '/app/admin/command-shell'));
   }
 });
 

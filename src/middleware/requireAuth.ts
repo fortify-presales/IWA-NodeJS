@@ -14,7 +14,7 @@ export function requireAdminAuth(req: Request, res: Response, next: NextFunction
   const user = req.user as any;
   const roles = (user.authorities ?? []).map((a: any) => a.name);
   if (!roles.includes('ROLE_ADMIN')) {
-    return res.status(403).render('error', { title: 'Forbidden', message: 'Access denied', stack: '' });
+    return res.redirect('/app/admin');
   }
   next();
 }

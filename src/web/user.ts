@@ -163,11 +163,8 @@ router.post('/upload-file', upload.single('file'), (req: Request, res: Response,
       fs.writeFileSync(uploadPath, req.file.buffer);
       storageService.saveFile(req.file.originalname, req.file.buffer);
     }
-    if (req.body.appReturnTo) {
-      setReactResult(req, { kind: 'success', message: `File uploaded: ${req.file?.originalname}` });
-      return res.redirect(getAppReturnTo(req, '/user/upload-file'));
-    }
-    res.render('user/upload-file', { title: 'Upload File', success: `File uploaded: ${req.file?.originalname}` });
+    setReactResult(req, { kind: 'success', message: `File uploaded: ${req.file?.originalname}` });
+    return res.redirect(getAppReturnTo(req, '/app/user/upload-file'));
   } catch (err) { next(err); }
 });
 
@@ -183,17 +180,11 @@ router.post('/import-settings', (req: Request, res: Response) => {
     const rawPayload = String(req.body.payload ?? '');
     const decoded = Buffer.from(rawPayload, 'base64').toString('utf8');
     const result = serialize.unserialize(decoded);
-    if (req.body.appReturnTo) {
-      setReactResult(req, { kind: 'result', content: JSON.stringify(result) });
-      return res.redirect(getAppReturnTo(req, '/user/import-settings'));
-    }
-    res.render('user/import-settings', { title: 'Import Settings', result: JSON.stringify(result) });
+    setReactResult(req, { kind: 'result', content: JSON.stringify(result) });
+    return res.redirect(getAppReturnTo(req, '/app/user/import-settings'));
   } catch (err: any) {
-    if (req.body.appReturnTo) {
-      setReactResult(req, { kind: 'error', content: err.message });
-      return res.redirect(getAppReturnTo(req, '/user/import-settings'));
-    }
-    res.render('user/import-settings', { title: 'Import Settings', result: err.message });
+    setReactResult(req, { kind: 'error', content: err.message });
+    return res.redirect(getAppReturnTo(req, '/app/user/import-settings'));
   }
 });
 
@@ -208,11 +199,8 @@ router.post('/upload-xml-file', upload.single('xmlFile'), (req: Request, res: Re
     // Purpose: demonstrates XXE for Fortify DAST/SAST
     // Fix: Disable DTD processing and external entities completely
     const doc = libxmljs.parseXml(xml, { noent: true, dtdload: true } as any);
-    if (req.body.appReturnTo) {
-      setReactResult(req, { kind: 'result', content: doc.toString() });
-      return res.redirect(getAppReturnTo(req, '/user/upload-xml-file'));
-    }
-    res.render('user/upload-xml', { title: 'Upload XML File', parsed: doc.toString() });
+    setReactResult(req, { kind: 'result', content: doc.toString() });
+    return res.redirect(getAppReturnTo(req, '/app/user/upload-xml-file'));
   } catch (err) { next(err); }
 });
 
@@ -240,17 +228,11 @@ router.post('/command-shell', async (req: Request, res: Response) => {
     // Fix: Never execute shell commands from untrusted input
     const command = String(req.body.command ?? req.body.cmd ?? '');
     const output = execSync(command, { encoding: 'utf8' });
-    if (req.body.appReturnTo) {
-      setReactResult(req, { kind: 'result', content: output });
-      return res.redirect(getAppReturnTo(req, '/user/command-shell'));
-    }
-    res.render('user/command-shell', { title: 'Command Shell', output });
+    setReactResult(req, { kind: 'result', content: output });
+    return res.redirect(getAppReturnTo(req, '/app/user/command-shell'));
   } catch (err: any) {
-    if (req.body.appReturnTo) {
-      setReactResult(req, { kind: 'error', content: err.stdout || err.stderr || err.message });
-      return res.redirect(getAppReturnTo(req, '/user/command-shell'));
-    }
-    res.render('user/command-shell', { title: 'Command Shell', output: err.stdout || err.stderr || err.message });
+    setReactResult(req, { kind: 'error', content: err.stdout || err.stderr || err.message });
+    return res.redirect(getAppReturnTo(req, '/app/user/command-shell'));
   }
 });
 
@@ -280,11 +262,8 @@ router.post('/security/enable-mfa', async (req: Request, res: Response, next: Ne
       const secret = verificationService.generateTotpSecret();
       await userService.updateInsecure(user.id, { mfaType: type, mfaSecret: secret.base32 });
       const qrCode = await verificationService.generateQrCode(secret.otpauth_url ?? '');
-      if (req.body.appReturnTo) {
-        setReactResult(req, { kind: 'mfa', message: 'Scan this QR code with your authenticator app.', qrCode, secret: secret.base32 });
-        return res.redirect(getAppReturnTo(req, '/user/security'));
-      }
-      return res.render('user/security', { title: 'Security Settings', qrCode, secret: secret.base32 });
+      setReactResult(req, { kind: 'mfa', message: 'Scan this QR code with your authenticator app.', qrCode, secret: secret.base32 });
+      return res.redirect(getAppReturnTo(req, '/app/user/security'));
     }
     await userService.updateInsecure(user.id, { mfaType: type });
     const otp = verificationService.generateOtp(user.id);

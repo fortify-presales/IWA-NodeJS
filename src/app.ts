@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import path from 'path';
 import express from 'express';
-import expressLayouts from 'express-ejs-layouts';
 import passport from 'passport';
 import swaggerUi from 'swagger-ui-express';
 import { configureSecurity } from './config/security.js';
@@ -30,11 +29,6 @@ import { adminRouter } from './web/admin/index.js';
 
 export function createApp() {
   const app = express();
-
-  app.set('view engine', 'ejs');
-  app.set('views', path.resolve('views'));
-  app.set('layout', 'layouts/main');
-  app.use(expressLayouts);
 
   app.use(requestLogger);
   configureSecurity(app);
