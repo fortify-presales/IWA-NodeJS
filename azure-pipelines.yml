@@ -26,4 +26,4 @@ steps:
     condition: always()
     inputs:
       testResultsFormat: JUnit
-      testResultsFiles: test-results/*.xml
+      testResultsFiles: packages/api/test-results/*.xml

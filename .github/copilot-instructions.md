@@ -19,8 +19,8 @@ Every intentional vulnerability MUST have this comment block immediately above i
 ## Adding New Vulnerabilities
 
 1. Add the marker comment as shown above.
-2. Add the vulnerability to `views/vulnerabilities.ejs`.
-3. Add a regression test in `tests/vulnerabilities/`.
+2. Add the vulnerability to `packages/web/src/publicPages.tsx` (the `vulnerabilities` table rendered by `VulnerabilitiesPage`).
+3. Add a regression test in `packages/api/tests/vulnerabilities/`.
 4. Document it in `DEMO.md` with exact payloads and expected results.
 
 ## What IS OK to fix

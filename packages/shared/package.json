@@ -1,0 +1,16 @@
+{
+  "name": "@iwa/shared",
+  "version": "1.0.0",
+  "description": "IWA Pharmacy Direct - types shared across packages",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
+  }
+}

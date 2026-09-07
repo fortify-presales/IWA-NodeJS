@@ -1,0 +1,22 @@
+{
+  "name": "@iwa/agent",
+  "version": "1.0.0",
+  "description": "IWA Pharmacy Direct - intentionally insecure LLM tool-calling agent",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@iwa/shared": "1.0.0",
+    "@langchain/core": "^0.3.0",
+    "@langchain/openai": "^0.3.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
+  }
+}
