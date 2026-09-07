@@ -37,7 +37,8 @@ router.get('/status', (req, res) => {
  */
 router.get('/bootstrap', (req: Request, res: Response) => {
   const user = req.user as any;
-  const session = req.session as any;
+  // locals middleware already consumed and cleared session flash into res.locals.flash
+  const flash = res.locals.flash ?? { success: undefined, error: undefined };
   res.json(apiResponse('success', 'OK', {
     appName: env.appName,
     appVersion: env.appVersion,
@@ -48,10 +49,7 @@ router.get('/bootstrap', (req: Request, res: Response) => {
       email: user.email,
       authorities: (user.authorities ?? []).map((authority: any) => authority.name),
     } : null,
-    flash: {
-      success: session.flashSuccess,
-      error: session.flashError,
-    },
+    flash,
   }));
 });
 

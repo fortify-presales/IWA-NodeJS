@@ -20,34 +20,35 @@ const services = [
 ];
 
 const vulnerabilities = [
-  ['CWE-89', 'SQL Injection', 'GET /api/v3/users?keywords=', "?keywords=' OR '1'='1"],
-  ['CWE-79', 'Reflected XSS', 'GET /products?keywords=, /app/products?keywords=, /login?error=', '?keywords=<script>alert(1)</script>'],
-  ['CWE-79', 'Stored XSS', 'Product reviews, messages, /app/products/:id reviews', 'Submit <script>alert(1)</script> as review comment'],
-  ['CWE-611', 'XXE', 'POST /user/upload-xml-file', '<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/hosts">]>'],
-  ['CWE-22', 'Path Traversal', 'GET /user/files/download/unverified?file=', '?file=../../../etc/passwd'],
-  ['CWE-78', 'OS Command Injection', 'POST /admin/command-shell, /user/command-shell', 'cmd=ls; cat /etc/passwd'],
-  ['CWE-502', 'Insecure Deserialization', 'POST /user/import-settings', 'Base64 node-serialize payload with IIFE function'],
-  ['CWE-117', 'Log Injection', 'POST /admin/log?val=, /user/log', '?val=%0AINFO%20Injected%20log%20entry'],
-  ['CWE-532', 'Sensitive Data in Logs', 'POST /login', 'Check ./logs/iwa.log after login attempt'],
-  ['CWE-327, CWE-338', 'Weak Crypto / Insecure Randomness', 'src/utils/crypto.ts, VerificationService', 'generateInsecureToken() uses Math.random()'],
-  ['CWE-352', 'CSRF Disabled', 'All state-changing web forms', 'Cross-origin POST has no CSRF token validation'],
-  ['CWE-942', 'Permissive CORS', 'src/config/security.ts', 'Send request with arbitrary Origin header'],
-  ['CWE-601', 'Open Redirect', 'POST /login?redirect=', 'POST /login?redirect=http://evil.example'],
-  ['CWE-798', 'Hardcoded Credentials', 'src/config/env.ts, src/web/admin/index.ts', 'Hardcoded JWT secret and BACKDOOR_TOKEN'],
-  ['CWE-209', 'Verbose Error Handling', 'src/middleware/errorHandler.ts', 'Trigger error and inspect stack trace'],
-  ['CWE-639', 'Broken Access Control / IDOR', 'PUT /api/v3/users/:id', 'PUT without Authorization header'],
-  ['CWE-1035', 'Vulnerable Dependencies', 'package.json', 'Run npm audit'],
-  ['CWE-1321', 'Prototype Pollution', 'src/utils/deepMerge.ts, POST /user/edit-profile', '{"__proto__":{"polluted":true}}'],
-  ['CWE-915', 'Mass Assignment', 'PUT /api/v3/users/:id', '{"enabled":false,"locked":true}'],
-  ['CWE-95', 'Code Injection via eval', 'POST /admin/diagnostics', "expr=require('child_process').execSync('id')"],
-  ['CWE-918', 'SSRF', 'POST /admin/diagnostics', 'url=http://169.254.169.254/latest/meta-data/'],
-  ['CWE-1333', 'ReDoS', 'Email validation regex in registration', 'Submit email like aaaaaaaaaaaaaaaaaa@'],
-  ['CWE-943', 'Query Object Injection', 'GET /api/v3/products', 'Pass Sequelize operators as query params'],
-  ['CWE-614, CWE-1004, CWE-384', 'Insecure Session', 'src/config/security.ts', 'Inspect IWASESSION cookie attributes'],
-  ['CWE-307', 'Missing Rate Limiting', 'POST /login, POST /api/v3/site/sign-in', 'Unlimited login attempts'],
-  ['CWE-434', 'Unrestricted File Upload', 'POST /user/upload-file', 'Upload .php or .exe file'],
-  ['CWE-22', 'Zip Slip', 'POST /admin/backup', 'Upload ZIP with ../../etc/cron.d/evil'],
+  ['CWE-89', 'SQL Injection', 'GET /api/v3/users?keywords=', 'SAST, DAST', "?keywords=' OR '1'='1"],
+  ['CWE-79', 'Reflected XSS', 'GET /products?keywords=, /app/products?keywords=, /admin/users?keywords=, /app/admin/users?keywords=, /login?error=, /app/login?error=, /app/login-mfa?error=', 'SAST, DAST', '?keywords=<script>alert(1)</script>'],
+  ['CWE-79', 'Stored XSS', 'Product reviews, messages (admin view), /app/products/:id reviews, /app/user/messages, /app/user/reviews, /app/admin/messages, /app/admin/reviews', 'SAST, DAST', 'Submit <script>alert(1)</script> as review comment'],
+  ['CWE-611', 'XXE', 'POST /user/upload-xml-file, /app/user/upload-xml-file', 'SAST, DAST', '<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/hosts">]>'],
+  ['CWE-22', 'Path Traversal', 'GET /user/files/download/unverified?file=, /app/user/download-file', 'SAST, DAST', '?file=../../../etc/passwd'],
+  ['CWE-78', 'OS Command Injection', 'POST /admin/command-shell, /app/admin/command-shell, /user/command-shell, /app/user/command-shell', 'SAST, DAST', 'cmd=ls; cat /etc/passwd'],
+  ['CWE-502', 'Insecure Deserialization', 'POST /user/import-settings, /app/user/import-settings', 'SAST, DAST', 'Base64 node-serialize payload with IIFE function'],
+  ['CWE-117', 'Log Injection', 'POST /admin/log?val=, /app/admin/log, /user/log, /app/user/log', 'SAST', '?val=%0AINFO%20Injected%20log%20entry'],
+  ['CWE-532', 'Sensitive Data in Logs', 'POST /login (passport strategy)', 'SAST', 'Check ./logs/iwa.log after login attempt'],
+  ['CWE-327, CWE-338', 'Weak Crypto / Insecure Randomness', 'src/utils/crypto.ts, VerificationService', 'SAST', 'generateInsecureToken() uses Math.random()'],
+  ['CWE-352', 'CSRF Disabled', 'All state-changing web forms', 'DAST', 'Cross-origin POST has no CSRF token validation'],
+  ['CWE-942', 'Permissive CORS', 'src/config/security.ts', 'SAST, DAST', 'Send request with arbitrary Origin header'],
+  ['CWE-601', 'Open Redirect', 'POST /login?redirect=', 'SAST, DAST', 'POST /login?redirect=http://evil.example'],
+  ['CWE-798', 'Hardcoded Credentials', 'src/config/env.ts, src/web/admin/index.ts', 'SAST, DAST', 'Hardcoded JWT secret and BACKDOOR_TOKEN'],
+  ['CWE-209', 'Verbose Error Handling', 'src/middleware/errorHandler.ts', 'SAST, DAST', 'Trigger error and inspect stack trace'],
+  ['CWE-639', 'Broken Access Control / IDOR', 'PUT /api/v3/users/:id', 'DAST', 'PUT without Authorization header'],
+  ['CWE-1035', 'Vulnerable Dependencies', 'package.json', 'SCA', 'Run npm audit'],
+  ['CWE-1321', 'Prototype Pollution', 'src/utils/deepMerge.ts, POST /user/edit-profile', 'SAST, DAST', '{"__proto__":{"polluted":true}}'],
+  ['CWE-915', 'Mass Assignment', 'PUT /api/v3/users/:id', 'SAST, DAST', '{"enabled":false,"locked":true}'],
+  ['CWE-95', 'Code Injection via eval', 'POST /admin/diagnostics, /app/admin/diagnostics', 'SAST, DAST', "expr=require('child_process').execSync('id')"],
+  ['CWE-918', 'SSRF', 'POST /admin/diagnostics, /app/admin/diagnostics', 'SAST, DAST', 'url=http://169.254.169.254/latest/meta-data/'],
+  ['CWE-1333', 'ReDoS', 'Email validation regex in registration', 'SAST', 'Submit email like aaaaaaaaaaaaaaaaaa@'],
+  ['CWE-943', 'Query Object Injection', 'GET /api/v3/products', 'SAST, DAST', 'Pass Sequelize operators as query params'],
+  ['CWE-614, CWE-1004, CWE-384', 'Insecure Session', 'src/config/security.ts', 'DAST', 'Inspect IWASESSION cookie attributes'],
+  ['CWE-307', 'Missing Rate Limiting', 'POST /login, POST /api/v3/site/sign-in', 'DAST', 'Unlimited login attempts'],
+  ['CWE-434', 'Unrestricted File Upload', 'POST /user/upload-file, /app/user/upload-file', 'SAST, DAST', 'Upload .php or .exe file'],
+  ['CWE-22', 'Zip Slip', 'POST /admin/backup, /app/admin/backup', 'SAST, DAST', 'Upload ZIP with ../../etc/cron.d/evil'],
 ];
+
 
 export function HomePage({ bootstrap }: { bootstrap: BootstrapData | null }) {
   return (
@@ -112,13 +113,13 @@ export function VulnerabilitiesPage() {
         <table className="vulnerability-table">
           <thead><tr><th>#</th><th>CWE</th><th>Name</th><th>Location</th><th>Detection Tooling</th><th>Reproduction</th></tr></thead>
           <tbody>
-            {vulnerabilities.map(([cwe, name, location, reproduction], index) => (
+            {vulnerabilities.map(([cwe, name, location, tooling, reproduction], index) => (
               <tr key={`${cwe}-${name}`}>
                 <td>{index + 1}</td>
                 <td>{cwe}</td>
                 <td>{name}</td>
                 <td>{location}</td>
-                <td>SAST, DAST</td>
+                <td>{tooling}</td>
                 <td><code>{reproduction}</code></td>
               </tr>
             ))}

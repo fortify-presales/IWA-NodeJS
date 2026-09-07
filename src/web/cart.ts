@@ -75,18 +75,19 @@ async function buildCartFromReactPayload(cartJson: string): Promise<CartItem[]> 
     return [];
   }
   if (!Array.isArray(items)) return [];
+  const validItems = items.filter(item => item.pid);
+  const products = await Promise.all(validItems.map(item => productService.findById(item.pid)));
   const cart: CartItem[] = [];
-  for (const item of items) {
-    if (!item.pid) continue;
-    const product = await productService.findById(item.pid);
-    if (!product) continue;
+  validItems.forEach((item, index) => {
+    const product = products[index];
+    if (!product) return;
     cart.push({
       id: product.id,
       name: product.name,
       qty: parseInt(String(item.quantity), 10) || 1,
       price: Number(product.onSale ? product.salePrice : product.price),
     });
-  }
+  });
   return cart;
 }
 

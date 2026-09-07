@@ -8,7 +8,8 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:8890',
     browserName: 'chromium',
-    channel: 'msedge',
+    // Optional: set PLAYWRIGHT_CHANNEL=msedge locally; CI uses bundled Chromium by default.
+    channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
     headless: true,
     trace: 'on-first-retry',
   },
