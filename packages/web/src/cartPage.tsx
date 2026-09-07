@@ -41,10 +41,10 @@ export function CartPage({ currency, user }: CartPageProps) {
 
   const total = items.reduce((sum, item) => sum + price(item) * item.quantity, 0);
 
-  if (status) return <p className="status-line">{status}</p>;
+  if (status) return <p className="status-line page-frame">{status}</p>;
 
   return (
-    <section className="content-page cart-page">
+    <section className="page-frame content-page cart-page">
       <div className="page-kicker"><a href="/app/products">Shop</a> / <strong>Cart</strong></div>
       <h1>Shopping Cart</h1>
       {items.length === 0 ? (
@@ -96,7 +96,14 @@ export function CartCount() {
     };
   }, []);
 
-  return <span className="cart-count" aria-label={`${count} items in cart`}>{count}</span>;
+  return (
+    <span
+      className="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[0.75rem] font-bold text-white"
+      aria-label={`${count} items in cart`}
+    >
+      {count}
+    </span>
+  );
 }
 
 async function loadCartProducts() {

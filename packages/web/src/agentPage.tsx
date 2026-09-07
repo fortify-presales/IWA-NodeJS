@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChatBubbleLeftRightIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 
 type ToolCallRecord = {
   tool: string;
@@ -47,10 +48,17 @@ export function AssistantPage() {
 
   return (
     <section className="assistant-page">
-      <h1>AI Assistant</h1>
+      <div className="mb-2 flex items-center gap-2">
+        <ChatBubbleLeftRightIcon className="h-7 w-7 text-brand-muted" aria-hidden="true" />
+        <h1 className="!mb-0">AI Assistant</h1>
+      </div>
       <p>Ask about orders or products. The assistant can look up an order by ID or fetch a web page for you.</p>
 
-      {error ? <div className="danger-notice compact" role="alert">{error}</div> : null}
+      {error ? (
+        <div className="danger-notice compact" role="alert">
+          {error}
+        </div>
+      ) : null}
 
       <div className="assistant-history">
         {history.map((turn, i) => (
@@ -66,7 +74,10 @@ export function AssistantPage() {
           placeholder="e.g. What's the status of order 1234?"
           disabled={pending}
         />
-        <button type="submit" disabled={pending}>{pending ? 'Sending…' : 'Send'}</button>
+        <button type="submit" disabled={pending}>
+          <PaperAirplaneIcon className="h-5 w-5" aria-hidden="true" />
+          {pending ? 'Sending…' : 'Send'}
+        </button>
       </form>
     </section>
   );
@@ -75,9 +86,15 @@ export function AssistantPage() {
 function AssistantTurn({ turn }: { turn: ChatTurn }) {
   return (
     <div className="assistant-turn">
-      <p className="assistant-turn-user"><strong>You:</strong> {turn.message}</p>
+      <p className="assistant-turn-user">
+        <strong>You:</strong> {turn.message}
+      </p>
       {turn.toolCalls.map((call, i) => (
-        <p key={i} className="assistant-turn-tool"><em>Called {call.tool}({call.input})</em></p>
+        <p key={i} className="assistant-turn-tool">
+          <em>
+            Called {call.tool}({call.input})
+          </em>
+        </p>
       ))}
       <AssistantReply reply={turn.reply} />
     </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { MagnifyingGlassIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 import { addToCart } from './cart';
 import { getJson, Product, ProductListData, Review } from './api';
 
@@ -50,8 +51,9 @@ function ProductList({ currency }: CatalogProps) {
   }
 
   return (
-    <section className="catalog-page">
+    <section className="page-frame catalog-page">
       <div className="page-kicker"><a href="/app/products">Shop</a></div>
+      <h1 className="mb-4">All Products</h1>
 
       {keywords ? (
         <div className="search-banner">
@@ -61,15 +63,25 @@ function ProductList({ currency }: CatalogProps) {
       ) : null}
 
       <form className="search-form" onSubmit={submitSearch}>
-        <input
-          aria-label="Search products"
-          name="keywords"
-          onChange={(event) => setKeywords(event.target.value)}
-          placeholder="Enter search keywords"
-          type="search"
-          value={keywords}
-        />
-        <button type="submit">Search</button>
+        <div className="relative">
+          <MagnifyingGlassIcon
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted"
+          />
+          <input
+            aria-label="Search products"
+            className="pl-10"
+            name="keywords"
+            onChange={(event) => setKeywords(event.target.value)}
+            placeholder="Enter search keywords"
+            type="search"
+            value={keywords}
+          />
+        </div>
+        <button type="submit">
+          <MagnifyingGlassIcon className="h-5 w-5" aria-hidden="true" />
+          Search
+        </button>
       </form>
 
       {status ? <p className="status-line">{status}</p> : null}
@@ -83,7 +95,10 @@ function ProductList({ currency }: CatalogProps) {
             </a>
             <h2><a href={productUrl(product.id)}>{product.name}</a></h2>
             <Price currency={currency} product={product} />
-            <button type="button" onClick={() => addToCart(product.id, 1)}>Add to Cart</button>
+            <button type="button" onClick={() => addToCart(product.id, 1)}>
+              <ShoppingCartIcon className="h-5 w-5" aria-hidden="true" />
+              Add to Cart
+            </button>
           </article>
         ))}
       </div>
@@ -113,11 +128,11 @@ function ProductDetail({ currency, productId }: CatalogProps & { productId: stri
       .catch((error: Error) => setStatus(error.message));
   }, [productId]);
 
-  if (status) return <p className="status-line">{status}</p>;
-  if (!product) return <p className="status-line">Product not found.</p>;
+  if (status) return <p className="status-line page-frame">{status}</p>;
+  if (!product) return <p className="status-line page-frame">Product not found.</p>;
 
   return (
-    <section className="detail-page">
+    <section className="page-frame detail-page">
       <div className="page-kicker"><a href="/app/products">Shop</a> / <strong>{product.name}</strong></div>
       <div className="detail-layout">
         <div>
@@ -150,7 +165,10 @@ function ProductDetail({ currency, productId }: CatalogProps & { productId: stri
               type="number"
               value={quantity}
             />
-            <button disabled={!product.inStock} onClick={() => addToCart(product.id, quantity)} type="button">Add To Cart</button>
+            <button disabled={!product.inStock} onClick={() => addToCart(product.id, quantity)} type="button">
+              <ShoppingCartIcon className="h-5 w-5" aria-hidden="true" />
+              Add To Cart
+            </button>
           </div>
         </div>
       </div>

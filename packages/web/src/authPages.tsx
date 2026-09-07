@@ -1,3 +1,6 @@
+import { UserCircleIcon } from '@heroicons/react/24/outline';
+import { BrandLogo } from './components/BrandLogo';
+
 type AuthPageProps = {
   user: null | {
     username: string;
@@ -19,7 +22,9 @@ export function LoginPage({ user }: AuthPageProps) {
         <div className="auth-card">
           <h1>Already signed in</h1>
           <p>Welcome back, {user.username}.</p>
-          <a className="button" href="/user/home">Go To Account</a>
+          <a className="button" href="/user/home">
+            Go To Account
+          </a>
         </div>
       </section>
     );
@@ -30,7 +35,9 @@ export function LoginPage({ user }: AuthPageProps) {
       <div className="auth-card">
         {message ? <div className="notice compact">{message}</div> : null}
         {error ? <LoginError html={error} /> : null}
-        <img className="login-logo" src="/img/login_logo.png" alt="IWA Pharmacy Direct" />
+        <div className="login-logo">
+          <BrandLogo appName="IWA Pharmacy Direct" variant="onLight" layout="stacked" />
+        </div>
         <h1>Enter your details</h1>
         <form method="POST" action="/login">
           <input type="hidden" name="redirect" value={redirect} />
@@ -42,9 +49,16 @@ export function LoginPage({ user }: AuthPageProps) {
             Password
             <input autoComplete="off" name="password" required type="password" />
           </label>
-          <button name="login-submit" id="login-submit" type="submit">Login</button>
+          <button name="login-submit" id="login-submit" type="submit">
+            <UserCircleIcon className="h-5 w-5" aria-hidden="true" />
+            Login
+          </button>
         </form>
-        <p className="auth-links"><a href="/app/forgot-password">Forgot password?</a><span>|</span><a href="/app/register">Register</a></p>
+        <p className="auth-links">
+          <a href="/app/forgot-password">Forgot password?</a>
+          <span>|</span>
+          <a href="/app/register">Register</a>
+        </p>
       </div>
     </section>
   );
@@ -78,7 +92,9 @@ export function RegisterPage({ user }: AuthPageProps) {
         <div className="auth-card">
           <h1>Already registered</h1>
           <p>You are signed in as {user.username}.</p>
-          <a className="button" href="/user/home">Go To Account</a>
+          <a className="button" href="/user/home">
+            Go To Account
+          </a>
         </div>
       </section>
     );
@@ -90,16 +106,33 @@ export function RegisterPage({ user }: AuthPageProps) {
         <h1>Register</h1>
         <form method="POST" action="/user/register">
           <input type="hidden" name="appReturnTo" value="/app/login" />
-          <label>Username<input name="username" required type="text" /></label>
-          <label>Email<input name="email" required type="email" /></label>
+          <label>
+            Username
+            <input name="username" required type="text" />
+          </label>
+          <label>
+            Email
+            <input name="email" required type="email" />
+          </label>
           <div className="form-grid">
-            <label>First Name<input name="firstName" required type="text" /></label>
-            <label>Last Name<input name="lastName" required type="text" /></label>
+            <label>
+              First Name
+              <input name="firstName" required type="text" />
+            </label>
+            <label>
+              Last Name
+              <input name="lastName" required type="text" />
+            </label>
           </div>
-          <label>Password<input name="password" required type="password" /></label>
+          <label>
+            Password
+            <input name="password" required type="password" />
+          </label>
           <button type="submit">Register</button>
         </form>
-        <p className="auth-links">Already have an account? <a href="/app/login">Login</a></p>
+        <p className="auth-links">
+          Already have an account? <a href="/app/login">Login</a>
+        </p>
       </div>
     </section>
   );
@@ -118,7 +151,9 @@ export function ForgotPasswordPage() {
           </label>
           <button type="submit">Reset Password</button>
         </form>
-        <p className="auth-links"><a href="/app/login">Back to Login</a></p>
+        <p className="auth-links">
+          <a href="/app/login">Back to Login</a>
+        </p>
       </div>
     </section>
   );

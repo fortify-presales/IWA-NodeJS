@@ -1,4 +1,18 @@
 import React from 'react';
+import {
+  ArchiveBoxIcon,
+  BeakerIcon,
+  ChatBubbleLeftRightIcon,
+  ClipboardDocumentCheckIcon,
+  ClipboardDocumentListIcon,
+  CommandLineIcon,
+  DocumentTextIcon,
+  KeyIcon,
+  MagnifyingGlassIcon,
+  ShieldExclamationIcon,
+  ShoppingBagIcon,
+  UsersIcon,
+} from '@heroicons/react/24/outline';
 import { getJson } from './api';
 
 type AdminSummary = {
@@ -78,7 +92,7 @@ export function AdminRoute() {
 
 function AdminGate({ message }: { message: string }) {
   return (
-    <section className="content-page">
+    <section className="page-frame content-page">
       <h1>Admin</h1>
       <p>{message}</p>
       <a className="button" href={`/app/login?redirect=${encodeURIComponent(window.location.pathname)}`}>Login</a>
@@ -88,26 +102,26 @@ function AdminGate({ message }: { message: string }) {
 
 function Dashboard({ summary }: { summary: AdminSummary }) {
   return (
-    <section className="content-page admin-page">
+    <section className="page-frame content-page admin-page">
       <AdminBreadcrumb current="Dashboard" />
       <h1>Admin Dashboard</h1>
       <div className="admin-stats">
-        <Stat label="Users" value={summary.stats.users} />
-        <Stat label="Products" value={summary.stats.products} />
-        <Stat label="Orders" value={summary.stats.orders} />
-        <Stat label="Messages" value={summary.stats.messages} />
+        <Stat label="Users" value={summary.stats.users} icon={UsersIcon} />
+        <Stat label="Products" value={summary.stats.products} icon={ShoppingBagIcon} />
+        <Stat label="Orders" value={summary.stats.orders} icon={ClipboardDocumentListIcon} />
+        <Stat label="Messages" value={summary.stats.messages} icon={ChatBubbleLeftRightIcon} />
       </div>
       <div className="admin-actions">
-        <AdminAction href="/app/admin/users" label="Users" />
-        <AdminAction href="/app/admin/products" label="Products" />
-        <AdminAction href="/app/admin/orders" label="Orders" />
-        <AdminAction href="/app/admin/reviews" label="Reviews" />
-        <AdminAction href="/app/admin/messages" label="Messages" />
-        <AdminAction href="/app/admin/diagnostics" label="Diagnostics" />
-        <AdminAction href="/app/admin/command-shell" label="Command Shell" danger />
-        <AdminAction href="/app/admin/log" label="Log" />
-        <AdminAction href="/app/admin/backup" label="Backup" />
-        <AdminAction href="/app/admin/backdoor?token=iwa-admin-backdoor-super-secret-token-cwe798" label="Backdoor" danger />
+        <AdminAction href="/app/admin/users" label="Users" icon={UsersIcon} />
+        <AdminAction href="/app/admin/products" label="Products" icon={ShoppingBagIcon} />
+        <AdminAction href="/app/admin/orders" label="Orders" icon={ClipboardDocumentListIcon} />
+        <AdminAction href="/app/admin/reviews" label="Reviews" icon={ClipboardDocumentCheckIcon} />
+        <AdminAction href="/app/admin/messages" label="Messages" icon={ChatBubbleLeftRightIcon} />
+        <AdminAction href="/app/admin/diagnostics" label="Diagnostics" icon={BeakerIcon} />
+        <AdminAction href="/app/admin/command-shell" label="Command Shell" icon={CommandLineIcon} danger />
+        <AdminAction href="/app/admin/log" label="Log" icon={DocumentTextIcon} />
+        <AdminAction href="/app/admin/backup" label="Backup" icon={ArchiveBoxIcon} />
+        <AdminAction href="/app/admin/backdoor?token=iwa-admin-backdoor-super-secret-token-cwe798" label="Backdoor" icon={KeyIcon} danger />
       </div>
     </section>
   );
@@ -117,12 +131,27 @@ function UsersPage({ summary }: { summary: AdminSummary }) {
   const keywords = new URLSearchParams(window.location.search).get('keywords') ?? '';
   const users = keywords ? summary.users.filter((user) => user.username.includes(keywords)) : summary.users;
   return (
-    <section className="content-page admin-page">
+    <section className="page-frame content-page admin-page">
       <AdminBreadcrumb current="User Management" />
       <h1>User Management</h1>
       <form className="search-form" method="GET" action="/app/admin/users">
-        <input name="keywords" placeholder="Search users..." type="text" defaultValue={keywords} />
-        <button type="submit">Search</button>
+        <div className="relative">
+          <MagnifyingGlassIcon
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted"
+          />
+          <input
+            className="pl-10"
+            name="keywords"
+            placeholder="Search users..."
+            type="text"
+            defaultValue={keywords}
+          />
+        </div>
+        <button type="submit">
+          <MagnifyingGlassIcon className="h-5 w-5" aria-hidden="true" />
+          Search
+        </button>
       </form>
       {keywords ? <AdminSearchTerm html={keywords} /> : null}
       <DataTable headers={['Username', 'Email', 'Roles', 'Enabled', 'Actions']}>
@@ -150,7 +179,7 @@ function OrdersPage({ summary }: { summary: AdminSummary }) {
 
 function ReviewsPage({ summary }: { summary: AdminSummary }) {
   return (
-    <section className="content-page admin-page">
+    <section className="page-frame content-page admin-page">
       <AdminBreadcrumb current="Review Management" />
       <h1>Review Management</h1>
       <DataTable headers={['Product', 'User', 'Comment', 'Rating']}>
@@ -169,7 +198,7 @@ function ReviewsPage({ summary }: { summary: AdminSummary }) {
 
 function MessagesPage({ summary }: { summary: AdminSummary }) {
   return (
-    <section className="content-page admin-page">
+    <section className="page-frame content-page admin-page">
       <AdminBreadcrumb current="Message Management" />
       <h1>Message Management</h1>
       <DataTable headers={['User', 'Message', 'Date', 'Read']}>
@@ -201,7 +230,7 @@ function BackupPage({ summary }: { summary: AdminSummary }) {
 
 function DiagnosticsPage({ summary }: { summary: AdminSummary }) {
   return (
-    <section className="content-page admin-page">
+    <section className="page-frame content-page admin-page">
       <AdminBreadcrumb current="Diagnostics" />
       <h1>Admin Diagnostics</h1>
       <div className="admin-tool-grid">
@@ -240,7 +269,7 @@ function CommandShellPage({ summary }: { summary: AdminSummary }) {
 
 function AdminLogPage({ summary }: { summary: AdminSummary }) {
   return (
-    <section className="content-page admin-page">
+    <section className="page-frame content-page admin-page">
       <AdminBreadcrumb current="Application Log" />
       <h1>Application Log</h1>
       <form className="tool-form" method="POST" action="/admin/log">
@@ -260,10 +289,13 @@ function BackdoorPage() {
   const token = new URLSearchParams(window.location.search).get('token') ?? '';
   const granted = token === 'iwa-admin-backdoor-super-secret-token-cwe798';
   return (
-    <section className="content-page admin-page">
+    <section className="page-frame content-page admin-page">
       <AdminBreadcrumb current="Backdoor" />
       <div className="danger-notice">
-        <h1>Backdoor Access</h1>
+        <div className="mb-2 flex items-center gap-2">
+          <ShieldExclamationIcon className="h-6 w-6" aria-hidden="true" />
+          <h1 className="!mb-0">Backdoor Access</h1>
+        </div>
         {/* INSECURE: hardcoded admin backdoor token displayed in frontend (CWE-798)
             Purpose: demonstrates hardcoded credentials/backdoor access in the modern React admin frontend for Fortify SAST/DAST
             Fix: remove the backdoor and rely on proper authenticated admin access only */}
@@ -276,7 +308,7 @@ function BackdoorPage() {
 
 function TablePage({ title, headers, rows }: { title: string; headers: string[]; rows: string[][] }) {
   return (
-    <section className="content-page admin-page">
+    <section className="page-frame content-page admin-page">
       <AdminBreadcrumb current={title} />
       <h1>{title}</h1>
       <DataTable headers={headers}>{rows.map((row, rowIndex) => <tr key={String(rowIndex)}>{row.map((cell, cellIndex) => <td key={`${rowIndex}-${cellIndex}`}>{cell}</td>)}</tr>)}</DataTable>
@@ -287,7 +319,7 @@ function TablePage({ title, headers, rows }: { title: string; headers: string[];
 function AdminToolForm({ title, action, submitLabel, encType, danger, compact, children }: { title: string; action: string; submitLabel: string; encType?: string; danger?: boolean; compact?: boolean; children: React.ReactNode }) {
   const returnTo = window.location.pathname;
   return (
-    <section className={compact ? 'admin-tool-panel' : 'content-page admin-page tool-page'}>
+    <section className={compact ? 'admin-tool-panel' : 'page-frame content-page admin-page tool-page'}>
       {!compact ? <AdminBreadcrumb current={title} /> : null}
       <h1>{title}</h1>
       <form className="tool-form" method="POST" action={action} encType={encType}>
@@ -303,12 +335,41 @@ function AdminBreadcrumb({ current }: { current: string }) {
   return <div className="page-kicker"><a href="/app/admin">Admin</a> / <strong>{current}</strong></div>;
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
-  return <article className="admin-stat"><strong>{value}</strong><span>{label}</span></article>;
+function Stat({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}) {
+  return (
+    <article className="admin-stat">
+      <Icon className="mx-auto mb-2 h-6 w-6 text-brand-muted" aria-hidden="true" />
+      <strong>{value}</strong>
+      <span>{label}</span>
+    </article>
+  );
 }
 
-function AdminAction({ href, label, danger }: { href: string; label: string; danger?: boolean }) {
-  return <a className={danger ? 'admin-action danger' : 'admin-action'} href={href}>{label}</a>;
+function AdminAction({
+  href,
+  label,
+  danger,
+  icon: Icon,
+}: {
+  href: string;
+  label: string;
+  danger?: boolean;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}) {
+  return (
+    <a className={danger ? 'admin-action danger' : 'admin-action'} href={href}>
+      <Icon className="mb-2 h-5 w-5" aria-hidden="true" />
+      {label}
+    </a>
+  );
 }
 
 function DataTable({ headers, children }: { headers: string[]; children: React.ReactNode }) {
