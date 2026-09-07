@@ -1,6 +1,7 @@
 import {
   Table, Column, Model, DataType, PrimaryKey, Default, ForeignKey, BelongsTo, CreatedAt,
 } from 'sequelize-typescript';
+import type { NonAttribute } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './User.js';
 
@@ -31,5 +32,5 @@ export class Message extends Model {
   declare userId: string;
 
   @BelongsTo(() => User)
-  declare user: User;
+  declare user: NonAttribute<User>;
 }

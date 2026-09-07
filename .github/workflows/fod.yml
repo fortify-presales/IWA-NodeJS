@@ -49,7 +49,7 @@ jobs:
           DO_SAST_SCAN: true
           DO_SCA_SCAN: true
           DO_AVIATOR_AUDIT: true
-          COPY_FROM_RELEASE: "${{ github.event.repository.name }}:${{ github.event.repository.default_branch }}"
+          COPY_FROM_RELEASE: "${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.event.repository.default_branch }}"
           DO_WAIT: true
           DO_CHECK_POLICY: true
           DO_JOB_SUMMARY: true

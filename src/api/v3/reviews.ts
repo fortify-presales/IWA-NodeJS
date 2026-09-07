@@ -29,6 +29,11 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const size = parseInt(req.query.size as string) || env.pageSize;
+    const productId = String(req.query.productId ?? req.query.pid ?? '');
+    if (productId) {
+      const reviews = await reviewService.findByProduct(productId);
+      return res.json(apiResponse('success', 'OK', reviews));
+    }
     const result = await reviewService.findAll(page, size);
     res.json(apiResponse('success', 'OK', result));
   } catch (err) { next(err); }

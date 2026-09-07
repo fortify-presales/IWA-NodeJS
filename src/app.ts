@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import path from 'path';
 import express from 'express';
-import expressLayouts from 'express-ejs-layouts';
 import passport from 'passport';
 import swaggerUi from 'swagger-ui-express';
 import { configureSecurity } from './config/security.js';
@@ -20,6 +19,8 @@ import { ordersRouter } from './api/v3/orders.js';
 import { messagesRouter } from './api/v3/messages.js';
 import { reviewsRouter } from './api/v3/reviews.js';
 import { rolesRouter } from './api/v3/roles.js';
+import { accountRouter } from './api/v3/account.js';
+import { adminApiRouter } from './api/v3/admin.js';
 import { defaultRouter } from './web/default.js';
 import { productsWebRouter } from './web/products.js';
 import { cartRouter } from './web/cart.js';
@@ -28,11 +29,6 @@ import { adminRouter } from './web/admin/index.js';
 
 export function createApp() {
   const app = express();
-
-  app.set('view engine', 'ejs');
-  app.set('views', path.resolve('views'));
-  app.set('layout', 'layouts/main');
-  app.use(expressLayouts);
 
   app.use(requestLogger);
   configureSecurity(app);
@@ -63,12 +59,18 @@ export function createApp() {
   app.use('/api/v3/messages', messagesRouter);
   app.use('/api/v3/reviews', reviewsRouter);
   app.use('/api/v3/roles', rolesRouter);
+  app.use('/api/v3/account', accountRouter);
+  app.use('/api/v3/admin', adminApiRouter);
 
   app.use('/', defaultRouter);
   app.use('/products', productsWebRouter);
   app.use('/', cartRouter);
   app.use('/user', userRouter);
   app.use('/admin', adminRouter);
+
+  app.get(['/app', '/app/*'], (_req, res) => {
+    res.sendFile(path.resolve('public/app/index.html'));
+  });
 
   app.use('/api', apiErrorHandler);
   app.use(notFound);

