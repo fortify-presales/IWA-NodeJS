@@ -342,7 +342,8 @@ npm audit
 **Endpoint:** `POST /api/v3/agent/chat` — body `{"message": "<payload>", "conversationId": "<optional>"}`  
 **Auth:** Session cookie (login first) or Bearer Token  
 **React UI:** `http://localhost:8888/app/assistant`  
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST  
+**Requires:** `OPENAI_API_KEY` environment variable (optionally `OPENAI_MODEL`, defaults to `gpt-4o-mini`); without it the endpoint returns 503.
 
 Sign in first, then POST to the assistant. The assistant can call two tools: `lookup_order` (fetches
 any order by ID) and `fetch_url` (fetches any URL and returns the body).

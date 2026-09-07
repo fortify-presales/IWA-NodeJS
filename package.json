@@ -8,9 +8,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w packages/api",
-    "dev:frontend": "npm run dev -w packages/web",
+    "dev": "npm run build -w packages/shared && npm run build -w packages/agent && npm run build -w packages/web && npm run dev -w packages/api",
+    "dev:frontend": "npm run build -w packages/shared && npm run build -w packages/agent && npm run dev -w packages/web",
     "build": "npm run build -w packages/shared && npm run build -w packages/agent && npm run build -w packages/web && npm run build -w packages/api",
+    "clean": "rimraf --glob dist packages/*/dist packages/api/public/app packages/api/test-results test-results",
     "start": "npm run start -w packages/api",
     "test": "npm run test -w packages/api",
     "test:e2e": "npm run test:e2e -w packages/api",
@@ -30,6 +31,7 @@
     "@typescript-eslint/parser": "^7.8.0",
     "eslint": "^8.57.0",
     "prettier": "^3.2.5",
+    "rimraf": "^5.0.5",
     "typescript": "^5.4.5"
   }
 }

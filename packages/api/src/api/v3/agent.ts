@@ -52,6 +52,9 @@ router.post('/chat', async (req: Request, res: Response, next: NextFunction) => 
     if (!message || typeof message !== 'string') {
       return res.status(400).json(apiResponse('error', 'message is required'));
     }
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(503).json(apiResponse('error', 'AI assistant is not configured: set OPENAI_API_KEY'));
+    }
     const result = await getAgent().chat(message, conversationId);
     res.json(apiResponse('success', 'OK', result));
   } catch (err) { next(err); }

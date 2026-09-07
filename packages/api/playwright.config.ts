@@ -14,7 +14,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'npm --prefix ../.. run build -w @iwa/web -w @iwa/api && node dist/index.js',
+    command: 'npm --prefix ../.. run build -w @iwa/shared -w @iwa/agent -w @iwa/web -w @iwa/api && node dist/index.js',
     url: 'http://127.0.0.1:8890/api/v3/site/status',
     reuseExistingServer: false,
     timeout: 60_000,

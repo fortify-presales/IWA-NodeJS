@@ -15,6 +15,12 @@ export default defineConfig({
     proxy: {
       '/api': backendTarget,
       '/uploads': backendTarget,
+      // Legacy server-rendered form routes (full-page POSTs) must also be proxied to the backend
+      '/login': backendTarget,
+      '/login-mfa': backendTarget,
+      '/user': backendTarget,
+      '/admin': backendTarget,
+      '/cart': backendTarget,
     },
   },
 });

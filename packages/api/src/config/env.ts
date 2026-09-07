@@ -1,4 +1,13 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// `npm run dev -w packages/api` / `npm start -w packages/api` run with cwd=packages/api, so the
+// default dotenv lookup (cwd/.env) misses the monorepo root .env that README/CONTRIBUTING tell
+// developers to create. Load cwd/.env first (e.g. a container's /app/.env), then fall back to the
+// repo root .env without overriding anything already set.
+dotenv.config();
+dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../.env') });
 
 // INSECURE: hardcoded fallback secrets in code (CWE-798)
 // Purpose: Demonstrates hardcoded credentials vulnerability for Fortify SAST
