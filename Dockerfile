@@ -1,8 +1,12 @@
-# Multi-stage Dockerfile for IWA Pharmacy Direct
+# Multi-stage Dockerfile for IWA Pharmacy Direct (npm workspaces monorepo)
 FROM node:20-slim AS builder
 
 WORKDIR /app
-COPY package*.json ./
+COPY package.json package-lock.json ./
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/agent/package.json packages/agent/package.json
+COPY packages/api/package.json packages/api/package.json
+COPY packages/web/package.json packages/web/package.json
 RUN npm ci
 COPY . .
 RUN npm run build
@@ -12,12 +16,17 @@ FROM node:20-slim AS runtime
 RUN groupadd -r iwa && useradd -r -g iwa iwa
 
 WORKDIR /app
-COPY package*.json ./
+COPY package.json package-lock.json ./
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/agent/package.json packages/agent/package.json
+COPY packages/api/package.json packages/api/package.json
+COPY packages/web/package.json packages/web/package.json
 RUN npm ci --omit=dev
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/views ./views
-COPY --from=builder /app/public ./public
+COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /app/packages/agent/dist ./packages/agent/dist
+COPY --from=builder /app/packages/api/dist ./dist
+COPY --from=builder /app/packages/api/public ./public
 COPY --from=builder /app/.env.example ./.env.example
 COPY docker-entrypoint.sh ./
 
