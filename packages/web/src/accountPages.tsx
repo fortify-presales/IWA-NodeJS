@@ -1,4 +1,10 @@
 import React from 'react';
+import {
+  ChatBubbleLeftRightIcon,
+  ClipboardDocumentListIcon,
+  ShoppingBagIcon,
+  UserCircleIcon,
+} from '@heroicons/react/24/outline';
 import { getJson } from './api';
 
 type AccountSummary = {
@@ -66,7 +72,7 @@ export function AccountRoute({ currency }: AccountProps) {
 
   if (status === 'Authentication required') {
     return (
-      <section className="content-page">
+      <section className="page-frame content-page">
         <h1>Sign in required</h1>
         <p>Please sign in to view your account.</p>
         <a className="button" href={`/app/login?redirect=${encodeURIComponent(window.location.pathname)}`}>Login</a>
@@ -74,7 +80,7 @@ export function AccountRoute({ currency }: AccountProps) {
     );
   }
 
-  if (status || !summary) return <p className="status-line">{status}</p>;
+  if (status || !summary) return <p className="status-line page-frame">{status}</p>;
 
   if (path === '/app/user/profile') return <ProfilePage summary={summary} />;
   if (path === '/app/user/edit-profile') return <EditProfilePage summary={summary} />;
@@ -95,14 +101,14 @@ export function AccountRoute({ currency }: AccountProps) {
 
 function AccountHome({ summary }: { summary: AccountSummary }) {
   return (
-    <section className="content-page">
+    <section className="page-frame content-page">
       <AccountBreadcrumb current="My Account" />
       <h1>My Account</h1>
       <div className="account-grid">
-        <AccountTile href="/app/user/profile" title="Profile" value={summary.user.username} />
-        <AccountTile href="/app/user/orders" title="Orders" value={String(summary.orders.length)} />
-        <AccountTile href="/app/user/messages" title="Messages" value={summary.unreadMessages > 0 ? `${summary.unreadMessages} new` : 'None new'} />
-        <AccountTile href="/app/user/reviews" title="Reviews" value={String(summary.reviews.length)} />
+        <AccountTile href="/app/user/profile" title="Profile" value={summary.user.username} icon={UserCircleIcon} />
+        <AccountTile href="/app/user/orders" title="Orders" value={String(summary.orders.length)} icon={ShoppingBagIcon} />
+        <AccountTile href="/app/user/messages" title="Messages" value={summary.unreadMessages > 0 ? `${summary.unreadMessages} new` : 'None new'} icon={ChatBubbleLeftRightIcon} />
+        <AccountTile href="/app/user/reviews" title="Reviews" value={String(summary.reviews.length)} icon={ClipboardDocumentListIcon} />
       </div>
     </section>
   );
@@ -111,7 +117,7 @@ function AccountHome({ summary }: { summary: AccountSummary }) {
 function ProfilePage({ summary }: { summary: AccountSummary }) {
   const user = summary.user;
   return (
-    <section className="content-page">
+    <section className="page-frame content-page">
       <AccountBreadcrumb current="My Profile" />
       <h1>My Profile</h1>
       <table className="profile-table"><tbody>
@@ -162,7 +168,7 @@ function ChangePasswordPage() {
 
 function SecurityPage({ summary }: { summary: AccountSummary }) {
   return (
-    <section className="content-page tool-page">
+    <section className="page-frame content-page tool-page">
       <AccountBreadcrumb current="Security Settings" />
       <h1>Security Settings</h1>
       <p><strong>Current MFA:</strong> {summary.user.mfaType ?? 'MFA_NONE'}</p>
@@ -214,7 +220,7 @@ function UploadXmlPage({ summary }: { summary: AccountSummary }) {
 
 function DownloadFilesPage({ summary }: { summary: AccountSummary }) {
   return (
-    <section className="content-page tool-page">
+    <section className="page-frame content-page tool-page">
       <AccountBreadcrumb current="Download Files" />
       <h1>Download Uploaded Files</h1>
       {summary.files.length === 0 ? <EmptyState text="No files uploaded yet." /> : (
@@ -249,7 +255,7 @@ function CommandShellPage({ summary }: { summary: AccountSummary }) {
 
 function LogPage({ summary }: { summary: AccountSummary }) {
   return (
-    <section className="content-page tool-page">
+    <section className="page-frame content-page tool-page">
       <AccountBreadcrumb current="Application Log" />
       <h1>Application Log</h1>
       <form className="tool-form" method="POST" action="/user/log">
@@ -268,7 +274,7 @@ function LogPage({ summary }: { summary: AccountSummary }) {
 function ToolFormPage({ title, action, submitLabel, encType, danger, children }: { title: string; action: string; submitLabel: string; encType?: string; danger?: boolean; children: React.ReactNode }) {
   const returnTo = window.location.pathname;
   return (
-    <section className="content-page tool-page">
+    <section className="page-frame content-page tool-page">
       <AccountBreadcrumb current={title} />
       <h1>{title}</h1>
       <form className="tool-form" method="POST" action={action} encType={encType}>
@@ -285,7 +291,7 @@ function ToolFormPage({ title, action, submitLabel, encType, danger, children }:
 
 function OrdersPage({ currency, summary }: AccountProps & { summary: AccountSummary }) {
   return (
-    <section className="content-page">
+    <section className="page-frame content-page">
       <AccountBreadcrumb current="My Orders" />
       <h1>My Orders</h1>
       {summary.orders.length === 0 ? <EmptyState text="No orders yet." action="Shop Now" href="/app/products" /> : (
@@ -307,7 +313,7 @@ function OrdersPage({ currency, summary }: AccountProps & { summary: AccountSumm
 
 function MessagesPage({ summary }: { summary: AccountSummary }) {
   return (
-    <section className="content-page">
+    <section className="page-frame content-page">
       <AccountBreadcrumb current="My Messages" />
       <h1>My Messages</h1>
       {summary.messages.length === 0 ? <EmptyState text="No messages." /> : (
@@ -326,7 +332,7 @@ function MessagesPage({ summary }: { summary: AccountSummary }) {
 
 function ReviewsPage({ summary }: { summary: AccountSummary }) {
   return (
-    <section className="content-page">
+    <section className="page-frame content-page">
       <AccountBreadcrumb current="My Reviews" />
       <h1>My Reviews</h1>
       {summary.reviews.length === 0 ? <EmptyState text="No reviews yet." /> : (
@@ -344,8 +350,24 @@ function ReviewsPage({ summary }: { summary: AccountSummary }) {
   );
 }
 
-function AccountTile({ href, title, value }: { href: string; title: string; value: string }) {
-  return <a className="account-tile" href={href}><span>{title}</span><strong>{value}</strong></a>;
+function AccountTile({
+  href,
+  title,
+  value,
+  icon: Icon,
+}: {
+  href: string;
+  title: string;
+  value: string;
+  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}) {
+  return (
+    <a className="account-tile" href={href}>
+      {Icon ? <Icon className="h-6 w-6 text-brand-muted" aria-hidden="true" /> : null}
+      <span>{title}</span>
+      <strong>{value}</strong>
+    </a>
+  );
 }
 
 function AccountBreadcrumb({ current }: { current: string }) {

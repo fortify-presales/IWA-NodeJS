@@ -4,7 +4,9 @@ import { AccountRoute } from './accountPages';
 import { AdminRoute } from './adminPages';
 import { AssistantPage } from './agentPage';
 import { ForgotPasswordPage, LoginPage, MfaPage, RegisterPage } from './authPages';
-import { CartCount, CartPage } from './cartPage';
+import { CartPage } from './cartPage';
+import { SiteFooter } from './components/SiteFooter';
+import { SiteHeader } from './components/SiteHeader';
 import { ProductCatalog } from './products';
 import { AdvicePage, HomePage, PrescriptionsPage, ServicesPage, VulnerabilitiesPage } from './publicPages';
 import './styles.css';
@@ -49,13 +51,17 @@ function App() {
     };
   }, []);
 
-  return <ModernShell bootstrap={bootstrap}><AppRoute bootstrap={bootstrap} /></ModernShell>;
+  return (
+    <ModernShell bootstrap={bootstrap}>
+      <AppRoute bootstrap={bootstrap} />
+    </ModernShell>
+  );
 }
 
 function AppRoute({ bootstrap }: { bootstrap: BootstrapResponse['data'] | null }) {
   const path = window.location.pathname.replace(/\/$/, '');
 
-  if (path === '/app' || path === '') return <HomePage bootstrap={bootstrap} />;
+  if (path === '/app' || path === '') return <HomePage bootstrap={bootstrap ?? null} />;
   if (path === '/app/login') return <LoginPage user={bootstrap?.user ?? null} />;
   if (path === '/app/login-mfa') return <MfaPage />;
   if (path === '/app/register') return <RegisterPage user={bootstrap?.user ?? null} />;
@@ -66,62 +72,35 @@ function AppRoute({ bootstrap }: { bootstrap: BootstrapResponse['data'] | null }
   if (path.startsWith('/app/products')) return <ProductCatalog currency={bootstrap?.currency ?? 'GBP'} />;
   if (path === '/app/advice') return <AdvicePage />;
   if (path === '/app/services') return <ServicesPage />;
-  if (path === '/app/prescriptions') return <PrescriptionsPage bootstrap={bootstrap} />;
+  if (path === '/app/prescriptions') return <PrescriptionsPage bootstrap={bootstrap ?? null} />;
   if (path === '/app/vulnerabilities') return <VulnerabilitiesPage />;
   if (path === '/app/assistant') return <AssistantPage />;
 
-  return <Preview bootstrap={bootstrap} />;
+  return <Preview bootstrap={bootstrap ?? null} />;
 }
 
-function ModernShell({ bootstrap, children }: { bootstrap: BootstrapResponse['data'] | null; children: React.ReactNode }) {
-  const accountLabel = bootstrap?.user ? bootstrap.user.username : 'My Account';
-
+function ModernShell({
+  bootstrap,
+  children,
+}: {
+  bootstrap: BootstrapResponse['data'] | null;
+  children: React.ReactNode;
+}) {
   return (
     <>
-      <header className="topbar">
-        <a className="brand" href="/app/">{bootstrap?.appName ?? 'IWA Pharmacy Direct'}</a>
-        <nav>
-          <a href="/app/">Home</a>
-          <details className="nav-menu">
-            <summary>Shop</summary>
-            <div className="dropdown-panel">
-              <a href="/app/products">All Products</a>
-              <a href="/app/products?keywords=First%20Aid">First Aid</a>
-              <a href="/app/prescriptions">Prescriptions</a>
-            </div>
-          </details>
-          <details className="nav-menu">
-            <summary>Learn</summary>
-            <div className="dropdown-panel">
-              <a href="/app/services">Services</a>
-              <a href="/app/advice">Advice</a>
-              <a href="/app/assistant">AI Assistant</a>
-              <a href="/app/vulnerabilities">Vulnerabilities</a>
-              <a href="/swagger-ui" target="_blank">API Explorer</a>
-            </div>
-          </details>
-          <details className="nav-menu">
-            <summary>{accountLabel}</summary>
-            <div className="dropdown-panel">
-              {bootstrap?.user ? <a href="/app/user/home">Account Home</a> : <a href="/app/login">Login</a>}
-              {bootstrap?.user ? <a href="/app/user/profile">Profile</a> : <a href="/app/register">Register</a>}
-              {bootstrap?.user ? <a href="/app/user/orders">Orders</a> : null}
-              {bootstrap?.user ? <a href="/app/user/messages">Messages</a> : null}
-              {bootstrap?.user?.authorities.includes('ROLE_ADMIN') ? <a href="/app/admin">Site Administration</a> : null}
-              {bootstrap?.user ? <a href="/logout">Logout</a> : null}
-            </div>
-          </details>
-          <a className="cart-link" href="/app/cart">Cart <CartCount /></a>
-        </nav>
-      </header>
+      <SiteHeader
+        appName={bootstrap?.appName ?? 'IWA Pharmacy Direct'}
+        user={bootstrap?.user ?? null}
+      />
       <main className="app-shell">{children}</main>
+      <SiteFooter appName={bootstrap?.appName ?? 'IWA Pharmacy Direct'} />
     </>
   );
 }
 
 function Preview({ bootstrap }: { bootstrap: BootstrapResponse['data'] | null }) {
   return (
-    <section className="app-panel">
+    <section className="app-panel page-frame">
       <p className="eyebrow">Modern frontend preview</p>
       <h1>{bootstrap?.appName ?? 'IWA Pharmacy Direct'}</h1>
       <p>This React and TypeScript shell is served from Express and now includes migrated public routes.</p>
