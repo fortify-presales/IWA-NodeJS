@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { AgentService } from '@iwa/agent';
 import type { AgentChatRequest } from '@iwa/shared';
 import { orderRepository } from '../../repositories/OrderRepository.js';
+import { productRepository } from '../../repositories/ProductRepository.js';
 import { apiResponse } from '../../utils/web.js';
 
 const router = Router();
@@ -24,12 +25,30 @@ function getAgent(): AgentService {
         const order = await orderRepository.findById(orderId);
         return order ? order.toJSON() : null;
       },
+      // INSECURE: executes a model-requested address change without user confirmation or ownership checks (CWE-862)
+      // Purpose: demonstrates excessive agency when an LLM is allowed to perform a sensitive action
+      // Fix: require explicit confirmation and authorize the update for the authenticated order owner
+      updateShippingAddress: async (orderId: string, address: string) => {
+        await orderRepository.update(orderId, { shippingAddress: address });
+        return `Shipping address updated for order ${orderId}`;
+      },
       // INSECURE: fetches any user/model-supplied URL with no allow-list or private-address filtering (CWE-918)
       // Purpose: demonstrates SSRF via an LLM agent tool call, including indirect prompt injection triggering it
       // Fix: validate the URL against an allow-list of hosts and block private/link-local/metadata address ranges
       fetchUrl: async (url: string) => {
         const response = await fetch(url);
         return response.text();
+      },
+      // INSECURE: returns attacker-controlled product descriptions as trusted model context (CWE-1427)
+      // Purpose: demonstrates indirect prompt injection through business data retrieved by an agent tool
+      // Fix: label retrieved content as untrusted data and prevent it from being treated as instructions
+      searchProducts: async (keywords: string) => {
+        const result = await productRepository.search(keywords);
+        return result.rows.map((product) => ({
+          id: product.id,
+          name: product.name,
+          description: product.description,
+        }));
       },
     });
   }

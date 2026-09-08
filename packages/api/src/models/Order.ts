@@ -26,6 +26,9 @@ export class Order extends Model {
   @Column(DataType.TEXT)
   declare cart: string;
 
+  @Column(DataType.STRING)
+  declare shippingAddress: string;
+
   @Default(false)
   @Column(DataType.BOOLEAN)
   declare shipped: boolean;
