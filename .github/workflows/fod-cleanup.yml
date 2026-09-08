@@ -1,4 +1,3 @@
-
 # Create GitHub Action Repository Variables for your version of the application:
 #   FOD_URL                     - FoD Portal URL for your tenant (e.g. https://ams.fortify.com)
 # Create GitHub Action Secrets for your version of the application:

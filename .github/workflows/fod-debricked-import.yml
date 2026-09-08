@@ -1,0 +1,52 @@
+
+# Create GitHub Action Repository Variables for your version of the application:
+#   FOD_URL                     - FoD Portal URL for your tenant (e.g. https://ams.fortify.com)
+# Create GitHub Action Secrets for your version of the application:
+#   FOD_CLIENT_ID should be an API Key obtained from your FoD tenant.
+#   FOD_CLIENT_SECRET should be the secret for the API Key obtained for your FoD tenant.
+# Helpful hints:
+#   API Key credentials can be obtained from your FoD tenant, under Administration -> Settings -> API
+#   It is recommended to create credentials with 'Security Lead' Role selected.
+# Create GitHub Action Secrets for your version of the application:
+#   DEBRICKED_TOKEN should be the API token obtained from Debricked.
+# Note: this action is triggered on "check_run" events for the Debricked GitHub App.
+name: Import Debricked Results to FoD
+
+on:
+  check_run:
+    types:
+      - completed
+
+jobs:
+  import:
+    if: |
+      github.event.check_run.app.slug == 'debricked' &&
+      github.event.check_run.name == 'Vulnerability analysis' &&
+      (github.event.check_run.conclusion == 'success' ||
+       github.event.check_run.conclusion == 'neutral')
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: fortify/github-action/setup@v3
+        with:
+          fcli: latest
+      - name: Show Event Details
+        run: |
+          echo "App: ${{ github.event.check_run.app.slug }}"
+          echo "Check: ${{ github.event.check_run.name }}"
+          echo "Conclusion: ${{ github.event.check_run.conclusion }}"
+      - name: Import Debricked Results
+        run: |
+          set -euo pipefail
+          fcli fod session login --url ${FOD_URL} --client-id ${FOD_CLIENT_ID} --client-secret ${FOD_CLIENT_SECRET} --fod-session github-actions
+          trap 'fcli fod session logout --fod-session github-actions || true' EXIT
+          fcli fod oss-scan import-debricked --rel "${FOD_RELEASE}" -r "${DEBRICKED_REPO}" -b "${DEBRICKED_BRANCH}" -t "${DEBRICKED_TOKEN}" -f sbom.json --fod-session github-actions
+        env:
+          FOD_URL: ${{ vars.FOD_URL }}
+          FOD_CLIENT_ID: ${{secrets.FOD_CLIENT_ID}}
+          FOD_CLIENT_SECRET: ${{secrets.FOD_CLIENT_SECRET}}
+          FOD_RELEASE: '${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.event.check_run.check_suite.head_branch }}'
+          DEBRICKED_REPO: '${{ github.event.repository.full_name }}'
+          DEBRICKED_BRANCH: ${{ github.event.check_run.check_suite.head_branch }}
+          DEBRICKED_TOKEN: ${{secrets.DEBRICKED_TOKEN}}

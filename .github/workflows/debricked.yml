@@ -1,3 +1,6 @@
+# Create GitHub Action Secrets for your version of the application:
+#   DEBRICKED_TOKEN should be the API token obtained from Debricked.
+# Note: this action is on "workflow_dispatch" as the Debricked GitHub App is being used for scanning.
 name: Fortify SCA Scan
 
 on:
