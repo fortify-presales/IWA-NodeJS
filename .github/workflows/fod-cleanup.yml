@@ -20,6 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: fortify/github-action/setup@v3
+        with:
+          fcli: latest
       - name: Run custom fcli commands
         run: |
           set -euo pipefail
