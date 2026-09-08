@@ -1,0 +1,45 @@
+# Create Lifecycle user token credentials and set them as repository secrets named
+# LIFECYCLE_USERNAME and LIFECYCLE_PASSWORD.
+# Also set the Lifecycle server URL as a repository variable named LIFECYCLE_SERVER_URL.
+# By default, the Lifecycle application ID is the GitHub repository name.
+
+name: Sonatype SCA Scan
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  Sonatype-IQ-Scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # for actions/checkout when explicit permissions are set
+      security-events: write # for GitHub Advanced Security integration, if desired
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Fetch at least the immediate parents so that if this is a pull request then we can checkout the head.
+          fetch-depth: 2
+      # Run Sonatype IQ Server scan
+      - name: Run Sonatype Evaluate Action
+        id: evaluate
+        uses: sonatype/actions/evaluate@v1
+        with:
+          iq-server-url: ${{ vars.LIFECYCLE_SERVER_URL }}
+          username: ${{ secrets.LIFECYCLE_USERNAME }}
+          password: ${{ secrets.LIFECYCLE_PASSWORD }}
+          organization-id: ${{ github.repository_owner }}
+          application-id: ${{ github.event.repository.name }}
+          scan-targets: "package.json package-lock.json packages/**/package.json"
+          # for GitHub Advanced Security integration, you can optionally upload the results as SARIF to be displayed natively in GitHub. This requires that you have set up the appropriate permissions for the workflow and that you have configured the Sonatype application to allow SARIF uploads.
+          upload-sarif-file: true
+          # other input parameters could be provided here
+          #enable-reachability: true
+          #reachability-namespaces: 'com.example.library.one com.example.app.two'
+          # more input parameters may follow
+      # Just print the results for demonstration purposes, in a real workflow you would likely want to fail the build if the policy evaluation fails or upload the results to another system such as SSC.
+      - name: Print Results
+        run: |
+          echo "Scan ID: ${{ steps.evaluate.outputs.scan-id }}"
+          echo "Report URL: ${{ steps.evaluate.outputs.report-url }}"

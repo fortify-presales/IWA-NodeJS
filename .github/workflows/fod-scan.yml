@@ -10,7 +10,7 @@
 #   API Key credentials can be obtained from your FoD tenant, under Administration -> Settings -> API
 #   It is recommended to create credentials with 'Security Lead' Role selected.
 #   "Automated Audit preference" should be configured for the release's Static Scan Settings.
-name: Fortify on Demand Scan
+name: Fortify on Demand SASTScan
 
 on:
   workflow_dispatch:

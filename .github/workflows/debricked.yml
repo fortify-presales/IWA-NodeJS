@@ -1,4 +1,4 @@
-name: Debricked SCA Scan
+name: Fortify SCA Scan
 
 on:
   workflow_dispatch:

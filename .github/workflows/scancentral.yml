@@ -1,9 +1,7 @@
-name: Fortify SAST/SCA Scan
+name: Fortify ScanCentral SAST Scan
 
 on:
   workflow_dispatch:
-  #schedule:
-  #  - cron: '0 2 * * 1'
 
 jobs:
   fortify-sast:

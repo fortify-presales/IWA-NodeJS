@@ -7,7 +7,7 @@
 # Helpful hints:
 #   API Key credentials can be obtained from your FoD tenant, under Administration -> Settings -> API
 #   It is recommended to create credentials with 'Security Lead' Role selected.
-name: FoD PR Cleanup
+name: Fortify on Demand PR Cleanup
 
 on:
   pull_request:
