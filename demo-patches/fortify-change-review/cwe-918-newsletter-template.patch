@@ -1,0 +1,34 @@
+diff --git a/packages/api/src/api/v3/site.ts b/packages/api/src/api/v3/site.ts
+--- a/packages/api/src/api/v3/site.ts
++++ b/packages/api/src/api/v3/site.ts
+@@ -1,3 +1,5 @@
++import http from 'http';
++import https from 'https';
+ import { Router, Request, Response, NextFunction } from 'express';
+ import passport from 'passport';
+ import { body, validationResult } from 'express-validator';
+@@ -167,8 +169,22 @@ router.post('/register-user',
+  *       200:
+  *         description: Subscribed successfully
+  */
+ router.post('/subscribe-user', async (req: Request, res: Response) => {
+   const email = String(req.body.email ?? 'subscriber@iwa.local');
+-  await emailService.sendEmail(email, 'Subscription confirmed', '<p>Thanks for subscribing.</p>');
++  const templateUrl = String(req.body.templateUrl ?? '');
++  let html = '<p>Thanks for subscribing.</p>';
++
++  if (templateUrl) {
++    html = await new Promise<string>((resolve) => {
++      const client = templateUrl.startsWith('https') ? https : http;
++      client.get(templateUrl, response => {
++        let body = '';
++        response.on('data', chunk => { body += chunk; });
++        response.on('end', () => resolve(body));
++      }).on('error', err => resolve(err.message));
++    });
++  }
++
++  await emailService.sendEmail(email, 'Subscription confirmed', html);
+   res.json(apiResponse('success', 'Subscribed successfully', { email }));
+ });
+ 

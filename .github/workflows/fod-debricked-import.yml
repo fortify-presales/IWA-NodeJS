@@ -10,7 +10,7 @@
 # Create GitHub Action Secrets for your version of the application:
 #   DEBRICKED_TOKEN should be the API token obtained from Debricked.
 # Note: this action is triggered on "check_run" events for the Debricked GitHub App.
-name: Import Debricked Results to FoD
+name: Import SCA Results to FoD
 
 on:
   check_run:
@@ -18,7 +18,7 @@ on:
       - completed
 
 jobs:
-  import:
+  OSS-Scan-Import:
     if: |
       github.event.check_run.app.slug == 'debricked' &&
       github.event.check_run.name == 'Vulnerability analysis' &&

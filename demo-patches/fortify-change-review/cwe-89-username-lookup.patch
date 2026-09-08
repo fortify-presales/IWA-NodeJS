@@ -1,0 +1,15 @@
+diff --git a/packages/api/src/repositories/UserRepository.ts b/packages/api/src/repositories/UserRepository.ts
+--- a/packages/api/src/repositories/UserRepository.ts
++++ b/packages/api/src/repositories/UserRepository.ts
+@@ -29,6 +29,9 @@ export class UserRepository {
+   }
+ 
+   async findByUsername(username: string): Promise<User | null> {
+-    return User.findOne({ where: { username }, include: [{ model: Authority }] });
++    const sql = `SELECT * FROM users WHERE username = '${username}'`;
++    const matches = await sequelize.query(sql, { type: QueryTypes.SELECT, model: User });
++
++    return matches[0] ?? null;
+   }
+ 
+   async findByEmail(email: string): Promise<User | null> {

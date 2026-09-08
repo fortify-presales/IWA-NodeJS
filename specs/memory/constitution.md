@@ -45,6 +45,14 @@ Adding a new intentional vulnerability MUST also: add it to the `vulnerabilities
 `packages/web/src/publicPages.tsx`; add a regression test in `packages/api/tests/vulnerabilities/`;
 and document exact payloads/expected results in `DEMO.md`.
 
+Exception: Fortify Remediation Aviator branch-demo targets created from
+`demo-patches/fortify-remediate/` under `packages/api/src/remediationDemo/` are intentionally
+unmarked so Aviator can provide fix guidance for scanned findings. These patch-created
+files MAY be exposed only under the dedicated `/api/v3/remediation-demo` route prefix for SAST
+dataflow traceability, MUST NOT be linked from public UI, MUST be documented in `DEMO.md`, and
+MUST only be committed/remediated when explicitly demonstrating `/fortify-remediate` on committed,
+scan-visible findings.
+
 ### III. Monorepo Workspace Boundaries
 
 The repo is native npm workspaces (`packages/{shared,agent,api,web}`), not Turborepo/Nx. Build

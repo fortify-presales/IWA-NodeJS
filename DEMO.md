@@ -486,3 +486,87 @@ FAA is therefore complementary to traditional SAST and DAST here: it analyzes th
 agent's instructions, tool calls, and tool-result feedback loop, while traditional SAST and DAST cover the
 ordinary code and runtime paths around that agent.
 
+---
+
+## Fortify Skill Demo Workflows
+
+These workflows support `/fortify-change-review` and `/fortify-remediate` demonstrations without changing
+the permanent intentionally vulnerable app catalog by accident.
+
+### `/fortify-change-review` Patch Demos
+
+The change-review demos are committed as patch fixtures. Apply one patch, ask Copilot to run
+`/fortify-change-review`, then revert the patch before committing. The skill identifies the current
+working-tree diff for you.
+
+PowerShell:
+
+```powershell
+./bin/fortify-demo-vulns.ps1 list
+./bin/fortify-demo-vulns.ps1 apply --demo cwe-89-username-lookup
+# Ask Copilot: /fortify-change-review
+./bin/fortify-demo-vulns.ps1 revert --demo cwe-89-username-lookup
+```
+
+Bash:
+
+```bash
+./bin/fortify-demo-vulns.sh list
+./bin/fortify-demo-vulns.sh apply --demo cwe-918-newsletter-template
+# Ask Copilot: /fortify-change-review
+./bin/fortify-demo-vulns.sh revert --demo cwe-918-newsletter-template
+```
+
+Available demos:
+
+| Demo ID | Change introduced | Expected review focus |
+|---|---|---|
+| `cwe-89-username-lookup` | Replaces a parameterized username lookup with raw SQL string interpolation | SQL injection |
+| `cwe-918-newsletter-template` | Fetches a user-controlled newsletter template URL server-side | SSRF |
+
+### `/fortify-remediate` Aviator Demo
+
+The remediation demo is committed as a patch fixture. Apply the patch on a dedicated demo branch, commit the
+resulting route-visible files under `packages/api/src/remediationDemo/`, and scan that branch so Fortify can
+create issue records with Aviator fix guidance. The patch-created files are intentionally not marked with
+`INSECURE:` comments because Fortify Remediation Aviator refuses INTENTIONAL-marked findings. They are
+registered only under `/api/v3/remediation-demo` and are not shown in the public vulnerability table.
+
+```bash
+git switch -c demo/fortify-remediate
+npm run demo:remediate:apply -- --demo route-visible-sqli-ssrf
+npm run build -w packages/api
+npm run test:vulns -w packages/api
+git add packages/api/src/app.ts packages/api/src/remediationDemo
+git commit -m "Add Fortify remediation demo targets"
+```
+
+Then:
+
+1. Push the `demo/fortify-remediate` branch.
+2. Run the Fortify on Demand scan workflow manually against that branch.
+3. The workflow sets `DO_AVIATOR_REMEDIATIONS=true` only for manual runs on `demo/fortify-remediate`.
+4. Fortify scans the committed demo targets, applies available Aviator remediations in CI, pushes a new remediation branch, and creates a pull request on GitHub.
+5. In FoD or SSC, filter static findings to paths containing `packages/api/src/remediationDemo`.
+6. To demo `/fortify-remediate` locally as well, check out the original `demo/fortify-remediate` branch before applying the generated PR and provide those issue IDs to the skill.
+
+Demo-only route anchors:
+
+```text
+GET  /api/v3/remediation-demo/sql-injection?username=admin
+POST /api/v3/remediation-demo/ssrf { "templateUrl": "http://169.254.169.254/latest/meta-data/" }
+```
+
+After remediation, run:
+
+```bash
+npm run build -w packages/api
+npm run test:vulns -w packages/api
+```
+
+To remove the demo targets from the branch after the exercise, run:
+
+```bash
+npm run demo:remediate:revert -- --demo route-visible-sqli-ssrf
+```
+

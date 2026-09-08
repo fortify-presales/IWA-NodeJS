@@ -1,0 +1,92 @@
+diff --git a/packages/api/src/app.ts b/packages/api/src/app.ts
+--- a/packages/api/src/app.ts
++++ b/packages/api/src/app.ts
+@@ -20,8 +20,9 @@ import { reviewsRouter } from './api/v3/reviews.js';
+ import { rolesRouter } from './api/v3/roles.js';
+ import { accountRouter } from './api/v3/account.js';
+ import { adminApiRouter } from './api/v3/admin.js';
+ import { agentRouter } from './api/v3/agent.js';
++import { remediationDemoRouter } from './remediationDemo/router.js';
+ import { defaultRouter } from './web/default.js';
+ import { productsWebRouter } from './web/products.js';
+ import { cartRouter } from './web/cart.js';
+ import { userRouter } from './web/user.js';
+@@ -63,6 +64,7 @@ export function createApp() {
+   app.use('/api/v3/account', accountRouter);
+   app.use('/api/v3/admin', adminApiRouter);
+   app.use('/api/v3/agent', agentRouter);
++  app.use('/api/v3/remediation-demo', remediationDemoRouter);
+ 
+   app.use('/', defaultRouter);
+   app.use('/products', productsWebRouter);
+diff --git a/packages/api/src/remediationDemo/SqlInjectionTarget.ts b/packages/api/src/remediationDemo/SqlInjectionTarget.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/api/src/remediationDemo/SqlInjectionTarget.ts
+@@ -0,0 +1,18 @@
++import type { Request } from 'express';
++import { QueryTypes } from 'sequelize';
++import { sequelize } from '../config/database.js';
++
++type DemoUserRow = {
++  id: string;
++  username: string;
++  email: string;
++};
++
++export async function lookupUserForRemediationDemo(req: Request): Promise<DemoUserRow[]> {
++  const username = String(req.query.username ?? req.body?.username ?? '');
++  const sql = `SELECT id, username, email FROM users WHERE username = '${username}'`;
++
++  return sequelize.query(sql, {
++    type: QueryTypes.SELECT,
++  }) as Promise<DemoUserRow[]>;
++}
+diff --git a/packages/api/src/remediationDemo/SsrfTarget.ts b/packages/api/src/remediationDemo/SsrfTarget.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/api/src/remediationDemo/SsrfTarget.ts
+@@ -0,0 +1,17 @@
++import type { Request } from 'express';
++import http from 'http';
++import https from 'https';
++
++export async function fetchTemplateForRemediationDemo(req: Request): Promise<string> {
++  const templateUrl = String(req.query.templateUrl ?? req.body?.templateUrl ?? '');
++  if (!templateUrl) return '';
++
++  return new Promise<string>((resolve) => {
++    const client = templateUrl.startsWith('https') ? https : http;
++    client.get(templateUrl, response => {
++      let body = '';
++      response.on('data', chunk => { body += chunk; });
++      response.on('end', () => resolve(body));
++    }).on('error', err => resolve(err.message));
++  });
++}
+diff --git a/packages/api/src/remediationDemo/router.ts b/packages/api/src/remediationDemo/router.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/api/src/remediationDemo/router.ts
+@@ -0,0 +1,21 @@
++import { Router, Request, Response, NextFunction } from 'express';
++import { lookupUserForRemediationDemo } from './SqlInjectionTarget.js';
++import { fetchTemplateForRemediationDemo } from './SsrfTarget.js';
++
++const router = Router();
++
++router.get('/sql-injection', async (req: Request, res: Response, next: NextFunction) => {
++  try {
++    const rows = await lookupUserForRemediationDemo(req);
++    res.json({ status: 'success', data: rows });
++  } catch (err) { next(err); }
++});
++
++router.post('/ssrf', async (req: Request, res: Response, next: NextFunction) => {
++  try {
++    const content = await fetchTemplateForRemediationDemo(req);
++    res.type('text/plain').send(content);
++  } catch (err) { next(err); }
++});
++
++export { router as remediationDemoRouter };

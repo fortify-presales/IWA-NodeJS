@@ -47,9 +47,9 @@ jobs:
           SAST_ASSESSMENT_TYPE: ${{ vars.FOD_DEFAULT_ASSESSMENT_TYPE }}
           SAST_WAIT_EXTRA_OPTS: --timeout 3h
           DO_SAST_SCAN: true
-          DO_SCA_SCAN: true
+          DO_SCA_SCAN: false # We are using Debricked GitHub App for this
           DO_AVIATOR_AUDIT: true
-          #DO_AVIATOR_REMEDIATIONS: true
+          DO_AVIATOR_REMEDIATIONS: ${{ github.event_name == 'workflow_dispatch' && github.ref_name == 'demo/fortify-remediate' }}
           COPY_FROM_RELEASE: "${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.event.repository.default_branch }}"
           DO_WAIT: true
           DO_CHECK_POLICY: true

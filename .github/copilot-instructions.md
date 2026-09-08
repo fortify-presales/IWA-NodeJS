@@ -24,6 +24,8 @@ Every intentional vulnerability MUST have this comment block immediately above i
 3. Add a regression test in `packages/api/tests/vulnerabilities/`.
 4. Document it in `DEMO.md` with exact payloads and expected results.
 
+Exception: Fortify Remediation Aviator branch-demo targets created from `demo-patches/fortify-remediate/` under `packages/api/src/remediationDemo/` are intentionally unmarked so Aviator can provide fix guidance for scanned findings. Do not add `INSECURE:` markers to those patch-created files. They may be exposed only under `/api/v3/remediation-demo` for SAST dataflow traceability, must not be linked from public UI, and should only be committed/remediated when explicitly demonstrating `/fortify-remediate`.
+
 ## What IS OK to fix
 
 - Bugs that prevent the app from starting or crashing unexpectedly (unless they are intentional).
