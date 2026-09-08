@@ -1,0 +1,33 @@
+
+# Create GitHub Action Repository Variables for your version of the application:
+#   FOD_URL                     - FoD Portal URL for your tenant (e.g. https://ams.fortify.com)
+# Create GitHub Action Secrets for your version of the application:
+#   FOD_CLIENT_ID should be an API Key obtained from your FoD tenant.
+#   FOD_CLIENT_SECRET should be the secret for the API Key obtained for your FoD tenant.
+# Helpful hints:
+#   API Key credentials can be obtained from your FoD tenant, under Administration -> Settings -> API
+#   It is recommended to create credentials with 'Security Lead' Role selected.
+name: FoD PR Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  FoD-PR-Cleanup:
+    runs-on: ubuntu-latest
+      
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fortify/github-action/setup@v3
+      - name: Run custom fcli commands
+        run: |
+          set -euo pipefail
+          fcli fod session login --url ${FOD_URL} --client-id ${FOD_CLIENT_ID} --client-secret ${FOD_CLIENT_SECRET} --fod-session github-actions
+          fcli fod release delete "$FOD_RELEASE" --fod-session github-actions
+          trap 'fcli fod session logout --fod-session github-actions || true' EXIT
+        env:
+          FOD_URL: ${{ vars.FOD_URL }}
+          FOD_CLIENT_ID: ${{secrets.FOD_CLIENT_ID}}
+          FOD_CLIENT_SECRET: ${{secrets.FOD_CLIENT_SECRET}}
+          FOD_RELEASE: "${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.event.pull_request.head.ref }}"

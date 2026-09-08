@@ -25,4 +25,5 @@ test-results/
 package.zip
 
 .fortify/
-fortifypackage.zip
+*.zip
+*.sarif
