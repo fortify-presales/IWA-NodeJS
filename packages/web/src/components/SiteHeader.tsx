@@ -7,12 +7,10 @@ import {
   ChatBubbleLeftRightIcon,
   ChevronDownIcon,
   ClipboardDocumentListIcon,
-  CodeBracketSquareIcon,
   Cog6ToothIcon,
   HeartIcon,
   HomeIcon,
   MagnifyingGlassIcon,
-  ShieldExclamationIcon,
   ShoppingBagIcon,
   ShoppingCartIcon,
   UserCircleIcon,
@@ -34,7 +32,7 @@ type SiteHeaderProps = {
   user: BootstrapUser;
 };
 
-type MenuId = 'shop' | 'learn' | 'account' | null;
+type MenuId = 'shop' | 'advice' | 'account' | null;
 
 type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
 
@@ -51,12 +49,10 @@ const shopLinks: NavLink[] = [
   { href: '/app/prescriptions', label: 'Prescriptions', icon: ClipboardDocumentListIcon },
 ];
 
-const learnLinks: NavLink[] = [
+const adviceLinks: NavLink[] = [
   { href: '/app/services', label: 'Services', icon: BuildingStorefrontIcon },
   { href: '/app/advice', label: 'Advice', icon: BookOpenIcon },
   { href: '/app/assistant', label: 'AI Assistant', icon: ChatBubbleLeftRightIcon },
-  { href: '/app/vulnerabilities', label: 'Vulnerabilities', icon: ShieldExclamationIcon },
-  { href: '/swagger-ui', label: 'API Explorer', icon: CodeBracketSquareIcon, external: true },
 ];
 
 function pathMatches(href: string) {
@@ -74,7 +70,7 @@ export function SiteHeader({ appName, user }: SiteHeaderProps) {
   const keywords = new URLSearchParams(window.location.search).get('keywords') ?? '';
 
   React.useEffect(() => {
-    function onPointerDown(event: MouseEvent) {
+    function onPointerDown(event: PointerEvent) {
       if (!headerRef.current?.contains(event.target as Node)) {
         setOpenMenu(null);
       }
@@ -87,10 +83,10 @@ export function SiteHeader({ appName, user }: SiteHeaderProps) {
       }
     }
 
-    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
     return () => {
-      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
   }, []);
@@ -177,11 +173,11 @@ export function SiteHeader({ appName, user }: SiteHeaderProps) {
             className="nav-menu"
           />
           <NavDropdown
-            id="learn"
-            label="Learn"
-            open={openMenu === 'learn'}
-            onToggle={() => toggleMenu('learn')}
-            links={learnLinks}
+            id="advice"
+            label="Health & Advice"
+            open={openMenu === 'advice'}
+            onToggle={() => toggleMenu('advice')}
+            links={adviceLinks}
             icon={BookOpenIcon}
             className="nav-menu"
           />
@@ -259,8 +255,8 @@ export function SiteHeader({ appName, user }: SiteHeaderProps) {
             {shopLinks.map((link) => (
               <MobileLink key={link.href} href={link.href} label={link.label} icon={link.icon} />
             ))}
-            <p className="mt-2 mb-1 text-[0.72rem] font-bold tracking-wide text-muted uppercase">Learn</p>
-            {learnLinks.map((link) => (
+            <p className="mt-2 mb-1 text-[0.72rem] font-bold tracking-wide text-muted uppercase">Health & Advice</p>
+            {adviceLinks.map((link) => (
               <MobileLink
                 key={link.href}
                 href={link.href}

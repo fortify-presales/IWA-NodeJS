@@ -1,3 +1,4 @@
+import { FaFacebookF, FaInstagram, FaRss, FaXTwitter } from 'react-icons/fa6';
 import { BrandLogo } from './BrandLogo';
 
 export function SiteFooter({ appName }: { appName: string }) {
@@ -51,7 +52,7 @@ export function SiteFooter({ appName }: { appName: string }) {
                 <a href="/app/assistant">Contacts</a>
               </li>
               <li>
-                <a href="/app/vulnerabilities">Terms &amp; Condition</a>
+                <a href="/app/vulnerabilities">Terms &amp; Conditions</a>
               </li>
               <li>
                 <a href="/app/vulnerabilities">Privacy Policy</a>
@@ -61,19 +62,15 @@ export function SiteFooter({ appName }: { appName: string }) {
         </div>
 
         <div className="footer-social">
-          <h3>Follow Us</h3>
+          <h3>Demo</h3>
           <ul>
             <li>
-              <a href="#">Facebook</a>
+              <a href="/app/vulnerabilities">Vulnerabilities</a>
             </li>
             <li>
-              <a href="#">Twitter</a>
-            </li>
-            <li>
-              <a href="#">Instagram</a>
-            </li>
-            <li>
-              <a href="#">RSS</a>
+              <a href="/swagger-ui" target="_blank" rel="noreferrer">
+                API Explorer
+              </a>
             </li>
           </ul>
         </div>
@@ -101,6 +98,28 @@ export function SiteFooter({ appName }: { appName: string }) {
               Subscribe
             </button>
           </form>
+          <ul className="footer-social-icons" aria-label="Follow us on social media">
+            <li>
+              <a href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook">
+                <FaFacebookF aria-hidden="true" />
+              </a>
+            </li>
+            <li>
+              <a href="https://www.twitter.com/" target="_blank" rel="noreferrer" aria-label="X (Twitter)">
+                <FaXTwitter aria-hidden="true" />
+              </a>
+            </li>
+            <li>
+              <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram">
+                <FaInstagram aria-hidden="true" />
+              </a>
+            </li>
+            <li>
+              <a href="/app/rss" target="_blank" rel="noreferrer" aria-label="RSS feed">
+                <FaRss aria-hidden="true" />
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
     </footer>
