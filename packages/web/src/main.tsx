@@ -73,6 +73,13 @@ function AppRoute({
   bootstrapLoaded: boolean;
 }) {
   const path = window.location.pathname.replace(/\/$/, '');
+  const assistantNeedsLogin = path === '/app/assistant' && bootstrapLoaded && !bootstrap?.user;
+
+  React.useEffect(() => {
+    if (assistantNeedsLogin) {
+      window.location.replace(`/app/login?redirect=${encodeURIComponent('/app/assistant')}`);
+    }
+  }, [assistantNeedsLogin]);
 
   if (path === '/app' || path === '') return <HomePage bootstrap={bootstrap ?? null} />;
   if (path === '/app/login') return <LoginPage user={bootstrap?.user ?? null} />;
@@ -88,10 +95,7 @@ function AppRoute({
   if (path === '/app/prescriptions') return <PrescriptionsPage bootstrap={bootstrap ?? null} />;
   if (path === '/app/vulnerabilities') return <VulnerabilitiesPage />;
   if (path === '/app/assistant') {
-    if (bootstrapLoaded && !bootstrap?.user) {
-      window.location.replace(`/app/login?redirect=${encodeURIComponent('/app/assistant')}`);
-      return null;
-    }
+    if (assistantNeedsLogin) return null;
     return <AssistantPage />;
   }
 

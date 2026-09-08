@@ -30,7 +30,11 @@ export class OrderRepository {
   }
 
   async update(id: string, data: Partial<Order>): Promise<[number]> {
-    return Order.update(data, { where: { id } });
+    return Order.update(data, {
+      where: {
+        [Op.or]: [{ id }, { orderNum: id }],
+      },
+    });
   }
 
   async delete(id: string): Promise<number> {

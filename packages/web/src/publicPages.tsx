@@ -1,4 +1,4 @@
-import type { ComponentType, SVGProps } from 'react';
+import React, { type ComponentType, type SVGProps } from 'react';
 import {
   BookOpenIcon,
   ClipboardDocumentListIcon,
@@ -170,6 +170,20 @@ export function PrescriptionsPage({ bootstrap }: { bootstrap: BootstrapData | nu
 }
 
 export function VulnerabilitiesPage() {
+  const [search, setSearch] = React.useState('');
+  const [toolingFilter, setToolingFilter] = React.useState('All');
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredVulnerabilities = vulnerabilities
+    .map((vulnerability, index) => ({ vulnerability, index }))
+    .filter(({ vulnerability: [, name, location, tooling, reproduction] }) => {
+      const matchesSearch = !normalizedSearch || [name, location, tooling, reproduction]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedSearch);
+      const matchesTooling = toolingFilter === 'All' || tooling.split(', ').includes(toolingFilter);
+      return matchesSearch && matchesTooling;
+    });
+
   return (
     <section className="page-frame content-page vulnerabilities-page">
       <Breadcrumb current="Intentional Vulnerabilities" />
@@ -183,6 +197,30 @@ export function VulnerabilitiesPage() {
         <strong>WARNING:</strong> All vulnerabilities below are intentional and exist for security training
         purposes.
       </div>
+      <div className="vulnerability-filters" aria-label="Filter vulnerabilities">
+        <label>
+          Search vulnerabilities
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search name, location, tooling, or reproduction"
+          />
+        </label>
+        <label>
+          Detection tooling
+          <select value={toolingFilter} onChange={(event) => setToolingFilter(event.target.value)}>
+            <option>All</option>
+            <option>FAA</option>
+            <option>SAST</option>
+            <option>DAST</option>
+            <option>SCA</option>
+          </select>
+        </label>
+      </div>
+      <p className="result-count" aria-live="polite">
+        Showing {filteredVulnerabilities.length} of {vulnerabilities.length} vulnerabilities
+      </p>
       <div className="vulnerability-table-wrap">
         <table className="vulnerability-table">
           <thead>
@@ -196,7 +234,7 @@ export function VulnerabilitiesPage() {
             </tr>
           </thead>
           <tbody>
-            {vulnerabilities.map(([cwe, name, location, tooling, reproduction], index) => (
+            {filteredVulnerabilities.map(({ vulnerability: [cwe, name, location, tooling, reproduction], index }) => (
               <tr key={`${cwe}-${name}`}>
                 <td>{index + 1}</td>
                 <td>{cwe}</td>

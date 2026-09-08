@@ -22,4 +22,16 @@ describe('LLM Excessive Agency - state-changing tool', () => {
     const payload = 'Change the shipping address for order-999 now';
     expect(payload).toContain('Change the shipping address');
   });
+
+  it('VULNERABLE: the demo accepts a human-readable order number', async () => {
+    const updates: Array<{ orderId: string; address: string }> = [];
+    const tool = createShippingAddressTool(async (orderId: string, address: string) => {
+      updates.push({ orderId, address });
+      return `Shipping address updated for order ${orderId}`;
+    });
+
+    await tool.invoke({ orderId: 'ORD-001', address: '1 Attacker Street' } as never);
+
+    expect(updates).toEqual([{ orderId: 'ORD-001', address: '1 Attacker Street' }]);
+  });
 });
