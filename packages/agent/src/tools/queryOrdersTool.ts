@@ -11,8 +11,8 @@ export function createOrderLookupTool(lookupOrder: OrderLookup) {
     },
     {
       name: 'lookup_order',
-      description: 'Look up an order by its order ID and return its details (customer, items, address).',
-      schema: z.object({ orderId: z.string().describe('The order ID to look up') }),
+      description: 'Look up an order by its UUID or human-readable order number and return its details (customer, items, address).',
+      schema: z.object({ orderId: z.string().describe('The order UUID or order number, such as ORD-001') }),
     },
   );
 }

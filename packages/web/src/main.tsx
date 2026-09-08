@@ -33,6 +33,7 @@ type BootstrapResponse = {
 
 function App() {
   const [bootstrap, setBootstrap] = React.useState<BootstrapResponse['data'] | null>(null);
+  const [bootstrapLoaded, setBootstrapLoaded] = React.useState(false);
 
   React.useEffect(() => {
     let ignore = false;
@@ -40,10 +41,16 @@ function App() {
     fetch('/api/v3/site/bootstrap', { credentials: 'include' })
       .then((response) => response.json() as Promise<BootstrapResponse>)
       .then((payload) => {
-        if (!ignore) setBootstrap(payload.data ?? null);
+        if (!ignore) {
+          setBootstrap(payload.data ?? null);
+          setBootstrapLoaded(true);
+        }
       })
       .catch(() => {
-        if (!ignore) setBootstrap(null);
+        if (!ignore) {
+          setBootstrap(null);
+          setBootstrapLoaded(true);
+        }
       });
 
     return () => {
@@ -53,12 +60,18 @@ function App() {
 
   return (
     <ModernShell bootstrap={bootstrap}>
-      <AppRoute bootstrap={bootstrap} />
+      <AppRoute bootstrap={bootstrap} bootstrapLoaded={bootstrapLoaded} />
     </ModernShell>
   );
 }
 
-function AppRoute({ bootstrap }: { bootstrap: BootstrapResponse['data'] | null }) {
+function AppRoute({
+  bootstrap,
+  bootstrapLoaded,
+}: {
+  bootstrap: BootstrapResponse['data'] | null;
+  bootstrapLoaded: boolean;
+}) {
   const path = window.location.pathname.replace(/\/$/, '');
 
   if (path === '/app' || path === '') return <HomePage bootstrap={bootstrap ?? null} />;
@@ -74,7 +87,13 @@ function AppRoute({ bootstrap }: { bootstrap: BootstrapResponse['data'] | null }
   if (path === '/app/services') return <ServicesPage />;
   if (path === '/app/prescriptions') return <PrescriptionsPage bootstrap={bootstrap ?? null} />;
   if (path === '/app/vulnerabilities') return <VulnerabilitiesPage />;
-  if (path === '/app/assistant') return <AssistantPage />;
+  if (path === '/app/assistant') {
+    if (bootstrapLoaded && !bootstrap?.user) {
+      window.location.replace(`/app/login?redirect=${encodeURIComponent('/app/assistant')}`);
+      return null;
+    }
+    return <AssistantPage />;
+  }
 
   return <Preview bootstrap={bootstrap ?? null} />;
 }

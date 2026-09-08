@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChatBubbleLeftRightIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { marked } from 'marked';
 
 type ToolCallRecord = {
   tool: string;
@@ -105,5 +106,5 @@ function AssistantReply({ reply }: { reply: string }) {
   // INSECURE: agent reply rendered into the DOM without sanitization (CWE-79)
   // Purpose: demonstrates insecure output handling for an LLM agent - a prompt-injected reply can execute script
   // Fix: render the reply as plain text (let React escape it) or sanitize with an allow-list HTML sanitizer
-  return <div className="assistant-turn-reply" dangerouslySetInnerHTML={{ __html: reply }} />;
+  return <div className="assistant-turn-reply" dangerouslySetInnerHTML={{ __html: String(marked.parse(reply)) }} />;
 }

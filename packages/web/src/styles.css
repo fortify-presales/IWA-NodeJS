@@ -823,6 +823,35 @@
     font-size: 0.9rem;
   }
 
+  .assistant-turn-reply {
+    line-height: 1.65;
+  }
+
+  .assistant-turn-reply p,
+  .assistant-turn-reply ul,
+  .assistant-turn-reply ol,
+  .assistant-turn-reply pre {
+    margin: 0 0 0.75rem;
+  }
+
+  .assistant-turn-reply p:last-child,
+  .assistant-turn-reply ul:last-child,
+  .assistant-turn-reply ol:last-child,
+  .assistant-turn-reply pre:last-child {
+    margin-bottom: 0;
+  }
+
+  .assistant-turn-reply ul,
+  .assistant-turn-reply ol {
+    padding-left: 1.5rem;
+  }
+
+  .assistant-turn-reply code {
+    background: var(--color-surface-deep);
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.25rem;
+  }
+
   .assistant-form {
     display: grid;
     gap: 0.75rem;

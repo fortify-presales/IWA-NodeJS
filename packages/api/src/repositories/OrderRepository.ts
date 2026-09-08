@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import { Order } from '../models/Order.js';
 import { User } from '../models/User.js';
 import { paginate } from '../utils/pagination.js';
@@ -16,7 +17,12 @@ export class OrderRepository {
   // Purpose: demonstrates broken object level authorization for Fortify DAST
   // Fix: Always verify the requesting user owns the resource
   async findById(id: string): Promise<Order | null> {
-    return Order.findByPk(id, { include: [{ model: User }] });
+    return Order.findOne({
+      where: {
+        [Op.or]: [{ id }, { orderNum: id }],
+      },
+      include: [{ model: User }],
+    });
   }
 
   async create(data: Partial<Order>): Promise<Order> {
