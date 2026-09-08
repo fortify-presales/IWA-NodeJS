@@ -5,6 +5,7 @@
 **DO NOT** fix, sanitize, or harden any code marked as intentionally insecure.
 **DO NOT** remove vulnerability marker comments.
 **DO NOT** update deliberately pinned vulnerable dependencies listed in DEPENDENCIES.md.
+**The only exception is if you are explicitly instructed to fix a vulnerability for demonstration purposes.**
 
 ## Vulnerability Marker Convention
 
@@ -29,3 +30,10 @@ Every intentional vulnerability MUST have this comment block immediately above i
 - TypeScript compilation errors.
 - Build configuration issues.
 - Test infrastructure problems.
+- Vulnerabilities that are intentionally added for demonstration purposes and are clearly marked as such.
+
+## Spec-Driven Workflow
+
+Non-trivial features should have a `specs/<NNN>-<feature-slug>/` folder with `spec.md`, `plan.md`,
+and `tasks.md`, copied from `specs/templates/`. Read `specs/memory/constitution.md` first — it is
+the source of truth for the principles condensed above. See `specs/README.md` for the full workflow.

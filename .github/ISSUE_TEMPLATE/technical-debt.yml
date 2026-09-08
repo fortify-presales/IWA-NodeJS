@@ -1,0 +1,36 @@
+name: Technical Debt
+description: Flag code, config, or process debt that should be cleaned up (not a bug, not a vulnerability).
+title: "[Tech Debt]: "
+labels: ["tech-debt"]
+body:
+  - type: input
+    id: area
+    attributes:
+      label: Area
+      placeholder: "e.g. packages/api/src/repositories, build scripts, CI pipeline"
+    validations:
+      required: true
+  - type: textarea
+    id: current-pain
+    attributes:
+      label: Current pain point
+      description: What makes this debt costly today (slow builds, duplicated logic, brittle tests, etc.)?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed remediation
+      description: What would resolve it? Link to a `specs/<NNN>-<slug>/` folder if this needs a spec.
+    validations:
+      required: false
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Low
+        - Medium
+        - High
+    validations:
+      required: true

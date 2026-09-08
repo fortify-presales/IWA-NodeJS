@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Spec-driven workflow docs
+    url: https://github.com/fortify-presales/IWA-NodeJS/blob/main/specs/README.md
+    about: Read this before filing a Feature Request to see the spec/plan/tasks convention.

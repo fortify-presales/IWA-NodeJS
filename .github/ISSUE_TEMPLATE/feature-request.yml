@@ -1,0 +1,51 @@
+name: Feature Request
+description: Propose a new feature, following this repo's spec-driven workflow.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        See `specs/README.md` for the spec-driven workflow this repo follows.
+  - type: input
+    id: spec-folder
+    attributes:
+      label: Spec folder
+      description: Proposed folder name under `specs/`, e.g. `specs/002-order-export`
+      placeholder: specs/00X-short-slug
+    validations:
+      required: true
+  - type: textarea
+    id: overview
+    attributes:
+      label: Overview
+      description: What is this feature, who is it for, why does it matter?
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Known requirements / success criteria
+      description: Anything you already know should go in spec.md's Functional Requirements / Success Criteria sections.
+    validations:
+      required: false
+  - type: dropdown
+    id: packages
+    attributes:
+      label: Affected packages
+      multiple: true
+      options:
+        - "@iwa/shared"
+        - "@iwa/agent"
+        - "@iwa/api"
+        - "@iwa/web"
+        - Unsure
+    validations:
+      required: true
+  - type: checkboxes
+    id: vuln-demo
+    attributes:
+      label: Vulnerability demonstration
+      options:
+        - label: This feature intentionally introduces a new vulnerability (see Constitution Principle II)
+          required: false

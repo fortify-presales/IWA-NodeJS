@@ -1,0 +1,55 @@
+name: Security Finding
+description: Report a security issue — either confirming/discussing an intentional demo vulnerability, or flagging a real, unintended one.
+title: "[Security]: "
+labels: ["security"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This app is **intentionally vulnerable** (see `README.md` and `DEMO.md`). Most security
+        findings here are expected and documented — please classify yours below so it's routed
+        correctly.
+  - type: dropdown
+    id: intentional
+    attributes:
+      label: Is this an intentional demo vulnerability?
+      description: Check `DEMO.md` and search the code for a nearby `// INSECURE:` marker comment first.
+      options:
+        - "Yes — it's already documented in DEMO.md / marked INSECURE in code"
+        - "No — this looks like a real, unintended vulnerability"
+        - "Unsure"
+    validations:
+      required: true
+  - type: input
+    id: cwe
+    attributes:
+      label: CWE ID (if known)
+      placeholder: "CWE-89"
+    validations:
+      required: false
+  - type: textarea
+    id: intentional-details
+    attributes:
+      label: If intentional — what's the concern?
+      description: e.g. the marker/comment/doc is missing, inaccurate, or the demo doesn't reproduce as documented. Do NOT request a fix for the vulnerability itself.
+    validations:
+      required: false
+  - type: textarea
+    id: unintended-details
+    attributes:
+      label: If unintended — details
+      description: Affected file/line, exact reproduction payload/request, and why it's not one of the documented demo vulnerabilities.
+    validations:
+      required: false
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity (if unintended)
+      options:
+        - N/A (intentional)
+        - Low
+        - Medium
+        - High
+        - Critical
+    validations:
+      required: false

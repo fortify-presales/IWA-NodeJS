@@ -1,0 +1,47 @@
+name: Bug Report
+description: Report unexpected behavior, a crash, or a build/test failure (NOT an intentional vulnerability — use "Security Finding" for those).
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ If this is about one of the app's *intentional* vulnerabilities (anything documented in
+        `DEMO.md` or marked `// INSECURE:` in the code), please use the **Security Finding** template
+        instead — those are not bugs and must not be "fixed" (see Constitution Principle I).
+  - type: input
+    id: affected-package
+    attributes:
+      label: Affected package
+      placeholder: "@iwa/api, @iwa/web, @iwa/agent, @iwa/shared, or repo tooling (bin/, docker, CI)"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `npm run dev`
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include error messages / stack traces / screenshots.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: OS, Node version, npm version, local/Docker
+    validations:
+      required: false
