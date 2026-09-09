@@ -53,6 +53,16 @@ docker-compose up
 # React UI is served at http://localhost:8080/app/
 ```
 
+### Azure Web App Deployment
+A GitHub Actions workflow is provided at `.github/workflows/deploy-azure.yml`. To deploy:
+1. Create a Linux **Web App for Containers** in Azure App Service.
+2. In Azure App Service Application Settings, set `WEBSITES_PORT=8080`.
+3. Set GitHub Secrets in your repository (`Settings` -> `Secrets and variables` -> `Actions`):
+   - `AZURE_WEBAPP_NAME`: Your Azure Web App name.
+   - `AZURE_WEBAPP_PUBLISH_PROFILE`: XML contents of your Azure Web App Publish Profile (`Overview` -> `Get publish profile`).
+4. Ensure GitHub Package settings for the repository are configured to public access for `ghcr.io/fortify-presales/iwa-nodejs`.
+5. Push to the `main` branch to trigger build, publish to GHCR, and deployment.
+
 ## Seeded Credentials
 
 | Username | Password     | Role(s)              |
