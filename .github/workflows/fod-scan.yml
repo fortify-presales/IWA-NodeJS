@@ -36,25 +36,6 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Create remediation demo source package
-        if: github.ref_name == 'demo/fortify-remediate'
-        run: |
-          rm -f fortifypackage.zip
-          zip -r fortifypackage.zip \
-            packages/api/src/app.ts \
-            packages/api/src/remediationDemo \
-            packages/api/package.json \
-            packages/api/tsconfig.json \
-            package.json \
-            package-lock.json \
-            tsconfig.base.json
-          zip -T fortifypackage.zip
-      - name: Configure remediation demo package
-        if: github.ref_name == 'demo/fortify-remediate'
-        run: echo "USE_PACKAGE=${{ github.workspace }}/fortifypackage.zip" >> "$GITHUB_ENV"
-      - name: Configure ScanCentral package
-        if: github.ref_name != 'demo/fortify-remediate'
-        run: echo 'PACKAGE_EXTRA_OPTS=-bt none -exclude "DEMO.md" -exclude "SECURITY.md" -exclude "packages/api/tests"' >> "$GITHUB_ENV"
       # Perform Fortify on Demand SAST scan and import SAST results into GitHub code scanning alerts
       - name: Run FoD Scan
         uses: fortify/github-action@v3
@@ -64,6 +45,7 @@ jobs:
           FOD_CLIENT_SECRET: ${{secrets.FOD_CLIENT_SECRET}}
           DO_SETUP: true
           SETUP_EXTRA_OPTS: ${{ format('--sdlc-status Development --app-owner {0}', vars.FOD_DEFAULT_OWNER) }}
+          PACKAGE_EXTRA_OPTS: -bt none -exclude "DEMO.md" -exclude "SECURITY.md" -exclude "packages/api/tests"
           SAST_ASSESSMENT_TYPE: ${{ vars.FOD_DEFAULT_ASSESSMENT_TYPE }}
           SAST_WAIT_EXTRA_OPTS: --timeout 3h
           DO_SAST_SCAN: true

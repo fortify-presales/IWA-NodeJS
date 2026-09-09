@@ -1,9 +1,9 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: (none) → 1.0.0
-Bump rationale: Initial ratification, derived from .github/copilot-instructions.md and verified
-  repo conventions (npm workspaces monorepo, dotenv fallback, lazy AI agent construction).
+Version change: 1.0.0 → 1.0.1
+Bump rationale: Clarify normalization of ScanCentral's artificial Src/ prefix for Fortify
+  Remediation Aviator finding paths.
 Principles defined:
   I.   Intentional Insecurity Is Sacrosanct (NON-NEGOTIABLE)
   II.  Documented Vulnerability Lifecycle
@@ -11,9 +11,7 @@ Principles defined:
   IV.  Fault-Tolerant Runtime Configuration
   V.   Fixable Bugs vs. Preserved Vulnerabilities
 Templates reviewed for alignment:
-  ✅ specs/templates/spec-template.md
-  ✅ specs/templates/plan-template.md
-  ✅ specs/templates/tasks-template.md
+  No template updates required.
 Follow-up TODOs: none.
 -->
 
@@ -53,6 +51,11 @@ dataflow traceability, MUST NOT be linked from public UI, MUST be documented in 
 MUST only be committed/remediated when explicitly demonstrating `/fortify-remediate` on committed,
 scan-visible findings.
 
+When `/fortify-remediate` uses Aviator guidance for a ScanCentral-packaged SAST finding, a leading
+`Src/` in the reported path is packaging metadata, not part of the repository path. Agents MUST
+remove exactly that leading segment before locating or editing the file, confirm the normalized path
+exists, and leave all remaining path segments unchanged.
+
 ### III. Monorepo Workspace Boundaries
 
 The repo is native npm workspaces (`packages/{shared,agent,api,web}`), not Turborepo/Nx. Build
@@ -87,4 +90,4 @@ wording/clarification only) and prepending an updated Sync Impact Report comment
 this file. `.github/copilot-instructions.md` is the condensed, always-loaded summary of this
 document for AI coding agents; keep the two in sync when either changes.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-07 | **Last Amended**: 2026-09-07
+**Version**: 1.0.1 | **Ratified**: 2026-09-07 | **Last Amended**: 2026-09-09

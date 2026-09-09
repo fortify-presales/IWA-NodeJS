@@ -26,6 +26,10 @@ Every intentional vulnerability MUST have this comment block immediately above i
 
 Exception: Fortify Remediation Aviator branch-demo targets created from `demo-patches/fortify-remediate/` under `packages/api/src/remediationDemo/` are intentionally unmarked so Aviator can provide fix guidance for scanned findings. Do not add `INSECURE:` markers to those patch-created files. They may be exposed only under `/api/v3/remediation-demo` for SAST dataflow traceability, must not be linked from public UI, and should only be committed/remediated when explicitly demonstrating `/fortify-remediate`.
 
+## Fortify Remediation Paths
+
+When using `/fortify-remediate`, ScanCentral-created SAST finding paths may be prefixed with `Src/`. Treat this as packaging-only metadata: remove exactly one leading `Src/` segment before locating or editing the repository file. For example, remediate `Src/packages/api/src/services/StorageService.ts` as `packages/api/src/services/StorageService.ts`. Verify the normalized path exists before editing; do not remove or rewrite any other path segments.
+
 ## What IS OK to fix
 
 - Bugs that prevent the app from starting or crashing unexpectedly (unless they are intentional).
