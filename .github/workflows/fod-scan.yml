@@ -42,6 +42,10 @@ jobs:
           zip -r fortifypackage.zip . \
             -x 'fortifypackage.zip' \
             -x '.git/*' \
+            -x '.github/*' \
+            -x '.*' \
+            -x '*/.*' \
+            -x 'node_modules/@iwa/*' \
             -x 'DEMO.md' \
             -x 'SECURITY.md' \
             -x 'demo-patches/*' \
