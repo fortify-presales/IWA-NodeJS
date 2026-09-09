@@ -39,13 +39,15 @@ jobs:
       - name: Create Fortify source package
         run: |
           zip -r fortifypackage.zip \
+            node_modules \
             packages \
             Dockerfile \
             docker-entrypoint.sh \
             package.json \
             package-lock.json \
             tsconfig.base.json \
-            -x 'packages/**/dist/*'
+            -x 'packages/**/dist/*' \
+            -x 'packages/api/tests/*'
           zip -T fortifypackage.zip
       # Perform Fortify on Demand SAST scan and import SAST results into GitHub code scanning alerts
       - name: Run FoD Scan
