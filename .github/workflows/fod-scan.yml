@@ -38,15 +38,13 @@ jobs:
         run: npm ci
       - name: Create Fortify source package
         run: |
-          zip -r fortifypackage.zip \
-            node_modules \
-            packages \
-            Dockerfile \
-            docker-entrypoint.sh \
-            package.json \
-            package-lock.json \
-            tsconfig.base.json \
-            -x 'packages/**/dist/*' \
+          rm -f fortifypackage.zip
+          zip -r fortifypackage.zip . \
+            -x 'fortifypackage.zip' \
+            -x '.git/*' \
+            -x 'DEMO.md' \
+            -x 'SECURITY.md' \
+            -x 'demo-patches/*' \
             -x 'packages/api/tests/*'
           zip -T fortifypackage.zip
       # Perform Fortify on Demand SAST scan and import SAST results into GitHub code scanning alerts
@@ -59,7 +57,6 @@ jobs:
           DO_SETUP: true
           SETUP_EXTRA_OPTS: ${{ format('--sdlc-status Development --app-owner {0}', vars.FOD_DEFAULT_OWNER) }}
           USE_PACKAGE: ${{ github.workspace }}/fortifypackage.zip
-          #PACKAGE_EXTRA_OPTS: -bt none -exclude "DEMO.md" -exclude "SECURITY.md" -exclude "packages/api/tests"
           SAST_ASSESSMENT_TYPE: ${{ vars.FOD_DEFAULT_ASSESSMENT_TYPE }}
           SAST_WAIT_EXTRA_OPTS: --timeout 3h
           DO_SAST_SCAN: true
