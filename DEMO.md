@@ -542,9 +542,9 @@ git commit -m "Add Fortify remediation demo targets"
 
 Then:
 
-1. Push the `demo/fortify-remediate` branch.
-2. Run the Fortify on Demand scan workflow manually against that branch.
-3. The workflow sets `DO_AVIATOR_REMEDIATIONS=true` only for manual runs on `demo/fortify-remediate`.
+1. Push the `demo/fortify-remediate` branch. The FoD workflow starts automatically; a manual workflow run on the branch also works.
+2. On this branch, the workflow submits a focused `fortifypackage.zip` containing the remediation demo targets and their project configuration. Other branches use standard ScanCentral packaging.
+3. The workflow sets `DO_AVIATOR_REMEDIATIONS=true` for both pushes and manual runs on `demo/fortify-remediate`.
 4. Fortify scans the committed demo targets, applies available Aviator remediations in CI, pushes a new remediation branch, and creates a pull request on GitHub.
 5. In FoD or SSC, filter static findings to paths containing `packages/api/src/remediationDemo`.
 6. To demo `/fortify-remediate` locally as well, check out the original `demo/fortify-remediate` branch before applying the generated PR and provide those issue IDs to the skill.
