@@ -54,8 +54,6 @@ jobs:
       # Perform Fortify on Demand SAST scan and import SAST results into GitHub code scanning alerts
       - name: Run FoD Scan
         uses: fortify/github-action@v3
-        with:
-          debug: true
         env:
           FOD_URL: ${{ vars.FOD_URL }}
           FOD_CLIENT_ID: ${{secrets.FOD_CLIENT_ID}}
