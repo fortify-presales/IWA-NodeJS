@@ -30,7 +30,10 @@ COPY --from=builder /app/packages/api/public ./public
 COPY --from=builder /app/.env.example ./.env.example
 COPY docker-entrypoint.sh ./
 
-RUN mkdir -p data logs data/uploads && chown -R iwa:iwa /app
+ENV NODE_ENV=production
+ENV PORT=8080
+
+RUN chmod +x docker-entrypoint.sh && mkdir -p data logs data/uploads && chown -R iwa:iwa /app
 USER iwa
 
 EXPOSE 8080
