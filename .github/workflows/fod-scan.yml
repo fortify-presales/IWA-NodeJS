@@ -48,7 +48,7 @@ jobs:
             -x 'packages/**/dist/*'
           zip -T fortifypackage.zip
       # Perform Fortify on Demand SAST scan and import SAST results into GitHub code scanning alerts
-      - name: Run FoD SAST+SCA Scan
+      - name: Run FoD Scan
         uses: fortify/github-action@v3
         env:
           FOD_URL: ${{ vars.FOD_URL }}
@@ -56,7 +56,7 @@ jobs:
           FOD_CLIENT_SECRET: ${{secrets.FOD_CLIENT_SECRET}}
           DO_SETUP: true
           SETUP_EXTRA_OPTS: ${{ format('--sdlc-status Development --app-owner {0}', vars.FOD_DEFAULT_OWNER) }}
-          USE_PACKAGE: fortifypackage.zip
+          USE_PACKAGE: ${{ github.workspace }}/fortifypackage.zip
           #PACKAGE_EXTRA_OPTS: -bt none -exclude "DEMO.md" -exclude "SECURITY.md" -exclude "packages/api/tests"
           SAST_ASSESSMENT_TYPE: ${{ vars.FOD_DEFAULT_ASSESSMENT_TYPE }}
           SAST_WAIT_EXTRA_OPTS: --timeout 3h
