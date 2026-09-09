@@ -58,9 +58,15 @@ function parseArgs(argv) {
 
 function selectedDemos(demoSet, demoId) {
   if (demoId === 'all') return [...demoSet.entries()];
-  const demo = demoSet.get(demoId);
-  if (!demo) throw new Error(`Unknown demo '${demoId}'. Run 'list' to see available demos.`);
-  return [[demoId, demo]];
+  const demoIds = demoId.split(',').map((id) => id.trim());
+  if (demoIds.some((id) => !id)) {
+    throw new Error('Demo IDs must be comma-separated with no empty values.');
+  }
+  return demoIds.map((id) => {
+    const demo = demoSet.get(id);
+    if (!demo) throw new Error(`Unknown demo '${id}'. Run 'list' to see available demos.`);
+    return [id, demo];
+  });
 }
 
 function patchPath(demo) {
@@ -143,11 +149,11 @@ function usage() {
   console.log(`Usage:
   node bin/fortify-demo-vulns.mjs list
   node bin/fortify-demo-vulns.mjs status
-  node bin/fortify-demo-vulns.mjs apply --demo <id|all> [--force]
-  node bin/fortify-demo-vulns.mjs revert --demo <id|all>
+  node bin/fortify-demo-vulns.mjs apply --demo <id[,id...]|all> [--force]
+  node bin/fortify-demo-vulns.mjs revert --demo <id[,id...]|all>
   node bin/fortify-demo-vulns.mjs status-remediate
-  node bin/fortify-demo-vulns.mjs apply-remediate --demo <id|all> [--force]
-  node bin/fortify-demo-vulns.mjs revert-remediate --demo <id|all>`);
+  node bin/fortify-demo-vulns.mjs apply-remediate --demo <id[,id...]|all> [--force]
+  node bin/fortify-demo-vulns.mjs revert-remediate --demo <id[,id...]|all>`);
 }
 
 try {

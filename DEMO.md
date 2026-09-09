@@ -495,7 +495,7 @@ the permanent intentionally vulnerable app catalog by accident.
 
 ### `/fortify-change-review` Patch Demos
 
-The change-review demos are committed as patch fixtures. Apply one patch, ask Copilot to run
+The change-review demos are committed as patch fixtures. Apply one or more patches, ask Copilot to run
 `/fortify-change-review`, then revert the patch before committing. The skill identifies the current
 working-tree diff for you.
 
@@ -503,18 +503,17 @@ PowerShell:
 
 ```powershell
 ./bin/fortify-demo-vulns.ps1 list
-./bin/fortify-demo-vulns.ps1 apply --demo cwe-89-username-lookup
+./bin/fortify-demo-vulns.ps1 apply --demo "cwe-89-username-lookup, cwe-918-newsletter-template"
 # Ask Copilot: /fortify-change-review
-./bin/fortify-demo-vulns.ps1 revert --demo cwe-89-username-lookup
+./bin/fortify-demo-vulns.ps1 revert --demo "cwe-89-username-lookup, cwe-918-newsletter-template"
 ```
-
 Bash:
 
 ```bash
 ./bin/fortify-demo-vulns.sh list
-./bin/fortify-demo-vulns.sh apply --demo cwe-918-newsletter-template
+./bin/fortify-demo-vulns.sh apply --demo "cwe-89-username-lookup, cwe-918-newsletter-template"
 # Ask Copilot: /fortify-change-review
-./bin/fortify-demo-vulns.sh revert --demo cwe-918-newsletter-template
+./bin/fortify-demo-vulns.sh revert --demo "cwe-89-username-lookup, cwe-918-newsletter-template"
 ```
 
 Available demos:
