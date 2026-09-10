@@ -29,7 +29,9 @@
     "db:reset": "npm run db:reset -w packages/api",
     "sbom": "cyclonedx-npm --output-file etc/sbom.json",
     "docker:build": "docker build -t iwa-nodejs .",
-    "docker:run": "docker run -p 8080:8080 iwa-nodejs"
+    "docker:run": "docker run -p 8080:8080 iwa-nodejs",
+    "postman:run": "newman run postman/IWA-NodeJS.postman_collection.json -e postman/IWA-NodeJS.postman_environment.json --insecure",
+    "postman:run:combined": "newman run postman/IWA-NodeJS.combined.postman_collection.json --insecure"
   },
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "^1.19.3",
@@ -37,6 +39,7 @@
     "@typescript-eslint/eslint-plugin": "^7.8.0",
     "@typescript-eslint/parser": "^7.8.0",
     "eslint": "^8.57.0",
+    "newman": "^6.2.1",
     "prettier": "^3.2.5",
     "rimraf": "^5.0.5",
     "typescript": "^5.4.5"
