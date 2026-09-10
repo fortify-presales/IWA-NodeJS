@@ -32,6 +32,7 @@ cp .env.example .env
 ## Running
 
 ### Development
+
 ```bash
 npm run dev
 # App runs on http://localhost:8888
@@ -39,6 +40,7 @@ npm run dev
 ```
 
 ### Production
+
 ```bash
 npm run build
 npm start
@@ -47,6 +49,7 @@ npm start
 ```
 
 ### Docker
+
 ```bash
 docker-compose up
 # App runs on http://localhost:8080
@@ -54,19 +57,13 @@ docker-compose up
 ```
 
 ### Azure Web App Deployment
-A GitHub Actions workflow is provided at `.github/workflows/deploy-azure.yml`. To deploy:
-1. Create a Linux **Web App for Containers** in Azure App Service.
-2. In Azure App Service Application Settings, set `WEBSITES_PORT=8080`.
-3. Set GitHub Secrets in your repository (`Settings` -> `Secrets and variables` -> `Actions`):
-   - `AZURE_WEBAPP_NAME`: Your Azure Web App name.
-   - `AZURE_WEBAPP_PUBLISH_PROFILE`: XML contents of your Azure Web App Publish Profile (`Overview` -> `Get publish profile`).
-4. Ensure GitHub Package settings for the repository are configured to public access for `ghcr.io/fortify-presales/iwa-nodejs`.
-5. Push to the `main` branch to trigger build, publish to GHCR, and deployment.
+
+See [DEPLOY.md](DEPLOY.md) for the Azure App Service container deployment guide.
 
 ## Seeded Credentials
 
-| Username | Password     | Role(s)              |
-|----------|-------------|----------------------|
+| Username | Password     | Role(s)               |
+| -------- | ------------ | --------------------- |
 | admin    | Password123! | ROLE_ADMIN, ROLE_USER |
 | user1    | Password123! | ROLE_USER             |
 | user2    | Password123! | ROLE_USER             |
@@ -76,7 +73,7 @@ A GitHub Actions workflow is provided at `.github/workflows/deploy-azure.yml`. T
 ## Ports
 
 | Profile     | Port |
-|-------------|------|
+| ----------- | ---- |
 | development | 8888 |
 | production  | 8080 |
 
@@ -85,6 +82,7 @@ A GitHub Actions workflow is provided at `.github/workflows/deploy-azure.yml`. T
 REST API available at `/api/v3/` with OpenAPI docs at `/swagger-ui`.
 
 Key endpoints:
+
 - `POST /api/v3/site/sign-in` — Authenticate and receive JWT
 - `GET /api/v3/products` — Browse products
 - `GET /api/v3/users` — User management (auth required)
