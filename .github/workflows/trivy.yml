@@ -1,0 +1,68 @@
+# Scans the Docker image produced by this repo's Dockerfile for known CVEs using Trivy.
+name: Trivy Container Scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/**"
+      - ".github/workflows/trivy.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/**"
+      - ".github/workflows/trivy.yml"
+  schedule:
+    # Weekly scan to catch newly disclosed CVEs in unchanged image layers
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: iwa-nodejs:${{ github.sha }}
+          load: true
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: iwa-nodejs:${{ github.sha }}
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH,MEDIUM
+          ignore-unfixed: true
+
+      #- name: Upload Trivy scan results to GitHub Security tab
+      #  uses: github/codeql-action/upload-sarif@v3
+      #  if: always()
+      #  with:
+      #    sarif_file: trivy-results.sarif
+
+      - name: Upload Trivy scan results as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-results
+          path: trivy-results.sarif
+          retention-days: 30
