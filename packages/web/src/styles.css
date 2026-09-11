@@ -737,6 +737,49 @@
     white-space: normal;
   }
 
+  .tooling-tags {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .tooling-tag {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    padding: 0.38rem 0.55rem;
+    white-space: nowrap;
+  }
+
+  .tooling-tag-faa {
+    background: #f3e8ff;
+    border-color: #d8b4fe;
+    color: #6b21a8;
+  }
+
+  .tooling-tag-sast {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1e40af;
+  }
+
+  .tooling-tag-dast {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+  }
+
+  .tooling-tag-sca {
+    background: #ffedd5;
+    border-color: #fdba74;
+    color: #9a3412;
+  }
+
   .data-table,
   .vulnerability-table,
   .cart-table,

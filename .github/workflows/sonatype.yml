@@ -31,9 +31,9 @@ jobs:
           password: ${{ secrets.LIFECYCLE_PASSWORD }}
           organization-id: ${{ github.repository_owner }}
           application-id: ${{ github.event.repository.name }}
-          scan-targets: "package.json package-lock.json packages/**/package.json"
+          scan-targets: "package.json package-lock.json packages/**/package.json packages/**/package-lock.json"
           # for GitHub Advanced Security integration, you can optionally upload the results as SARIF to be displayed natively in GitHub. This requires that you have set up the appropriate permissions for the workflow and that you have configured the Sonatype application to allow SARIF uploads.
-          upload-sarif-file: true
+          upload-sarif-file: false
           # other input parameters could be provided here
           #enable-reachability: true
           #reachability-namespaces: 'com.example.library.one com.example.app.two'

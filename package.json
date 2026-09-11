@@ -20,6 +20,7 @@
     "demo:vulns:status": "node bin/fortify-demo-vulns.mjs status",
     "demo:vulns:apply": "node bin/fortify-demo-vulns.mjs apply",
     "demo:vulns:revert": "node bin/fortify-demo-vulns.mjs revert",
+    "demo:stored-xss-review": "node bin/create-stored-xss-review.mjs",
     "demo:remediate:status": "node bin/fortify-demo-vulns.mjs status-remediate",
     "demo:remediate:apply": "node bin/fortify-demo-vulns.mjs apply-remediate",
     "demo:remediate:revert": "node bin/fortify-demo-vulns.mjs revert-remediate",

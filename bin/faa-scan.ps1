@@ -12,7 +12,7 @@ fortifyaa -scan . --scope packages --fod-release "fortify-presales/IWA-NodeJS:ma
 
 #fortifyaa -scan . --scope packages --fod-release "fortify-presales/IWA-NodeJS:main" --baseline iwa-nodejs.faa.sarif --incremental HEAD~1 --output iwa-nodejs.faa-incremental.sarif --message-format fod
 
-fcli fod sast-scan import-sarif --release "fortify-presales/IWA-NodeJS:faa-main" -f iwa-nodejs.faa.sarif
+fcli fod sast-scan import-sarif --release "fortify-presales/IWA-NodeJS:main-faa" -f iwa-nodejs.faa.sarif
 
 fcli fod session logout
 

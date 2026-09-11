@@ -31,11 +31,11 @@ const services = [
 ];
 
 const vulnerabilities = [
-  ['CWE-89', 'SQL Injection', 'GET /api/v3/users?keywords=', 'SAST, DAST', "?keywords=' OR '1'='1"],
-  ['CWE-79', 'Reflected XSS', 'GET /products?keywords=, /app/products?keywords=, /admin/users?keywords=, /app/admin/users?keywords=, /login?error=, /app/login?error=, /app/login-mfa?error=', 'SAST, DAST', '?keywords=<script>alert(1)</script>'],
+  ['CWE-89', 'SQL Injection', 'GET /api/v3/users?keywords= (API / legacy UI)', 'SAST, DAST', "?keywords=' OR '1'='1"],
+  ['CWE-79', 'Reflected XSS', 'GET /products?keywords=, /app/products?keywords=, /admin/users?keywords=, /app/admin/users?keywords=, /login?error=, /app/login?error=, /app/login-mfa?error=', 'SAST, DAST', '?keywords=<img src=x onerror=alert(1)>'],
   ['CWE-79', 'Stored XSS', 'Product reviews, messages (admin view), /app/products/:id reviews, /app/user/messages, /app/user/reviews, /app/admin/messages, /app/admin/reviews', 'SAST, DAST', 'Submit <script>alert(1)</script> as review comment'],
   ['CWE-611', 'XXE', 'POST /user/upload-xml-file, /app/user/upload-xml-file', 'SAST, DAST', '<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/hosts">]>'],
-  ['CWE-22', 'Path Traversal', 'GET /user/files/download/unverified?file=, /app/user/download-file', 'SAST, DAST', '?file=../../../etc/passwd'],
+  ['CWE-22', 'Path Traversal', 'GET /user/files/download/unverified?file= (legacy endpoint)', 'SAST, DAST', '?file=../../../etc/passwd'],
   ['CWE-78', 'OS Command Injection', 'POST /admin/command-shell, /app/admin/command-shell, /user/command-shell, /app/user/command-shell', 'SAST, DAST', 'cmd=ls; cat /etc/passwd'],
   ['CWE-502', 'Insecure Deserialization', 'POST /user/import-settings, /app/user/import-settings', 'SAST, DAST', 'Base64 node-serialize payload with IIFE function'],
   ['CWE-117', 'Log Injection', 'POST /admin/log?val=, /app/admin/log, /user/log, /app/user/log', 'SAST', '?val=%0AINFO%20Injected%20log%20entry'],
@@ -197,6 +197,10 @@ export function VulnerabilitiesPage() {
         <strong>WARNING:</strong> All vulnerabilities below are intentional and exist for security training
         purposes.
       </div>
+      <p className="status-line">
+        Locations identify the surface where each issue can be reproduced. Entries without an <code>/app</code>
+        route are API or legacy web surfaces and are not necessarily exposed through the React frontend.
+      </p>
       <div className="vulnerability-filters" aria-label="Filter vulnerabilities">
         <label>
           Search vulnerabilities
@@ -240,7 +244,7 @@ export function VulnerabilitiesPage() {
                 <td>{cwe}</td>
                 <td>{name}</td>
                 <td>{location}</td>
-                <td>{tooling}</td>
+                <td><ToolingTags tooling={tooling} /></td>
                 <td>
                   <code>{reproduction}</code>
                 </td>
@@ -253,6 +257,16 @@ export function VulnerabilitiesPage() {
         See <a href="/swagger-ui">API Documentation</a> for all REST endpoints.
       </p>
     </section>
+  );
+}
+
+function ToolingTags({ tooling }: { tooling: string }) {
+  return (
+    <div className="tooling-tags" aria-label={`Detection tooling: ${tooling}`}>
+      {tooling.split(', ').map((tool) => (
+        <span className={`tooling-tag tooling-tag-${tool.toLowerCase()}`} key={tool}>{tool}</span>
+      ))}
+    </div>
   );
 }
 
