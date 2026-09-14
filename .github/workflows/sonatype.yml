@@ -21,6 +21,11 @@ jobs:
         with:
           # Fetch at least the immediate parents so that if this is a pull request then we can checkout the head.
           fetch-depth: 2
+      - name: Normalize Sonatype identifiers
+        shell: bash
+        run: |
+          echo "SONATYPE_ORGANIZATION_ID=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+          echo "SONATYPE_APPLICATION_ID=${GITHUB_REPOSITORY##*/}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_ENV"
       # Run Sonatype IQ Server scan
       - name: Run Sonatype Evaluate Action
         id: evaluate
@@ -29,14 +34,25 @@ jobs:
           iq-server-url: ${{ vars.LIFECYCLE_SERVER_URL }}
           username: ${{ secrets.LIFECYCLE_USERNAME }}
           password: ${{ secrets.LIFECYCLE_PASSWORD }}
-          organization-id: ${{ github.repository_owner }}
-          application-id: ${{ github.event.repository.name }}
+          organization-id: ${{ env.SONATYPE_ORGANIZATION_ID }}
+          application-id: ${{ env.SONATYPE_APPLICATION_ID }}
           scan-targets: "package.json package-lock.json packages/**/package.json packages/**/package-lock.json"
           # for GitHub Advanced Security integration, you can optionally upload the results as SARIF to be displayed natively in GitHub. This requires that you have set up the appropriate permissions for the workflow and that you have configured the Sonatype application to allow SARIF uploads.
           upload-sarif-file: false
-          # other input parameters could be provided here
-          #enable-reachability: true
-          #reachability-namespaces: 'com.example.library.one com.example.app.two'
+          # Java/JVM reachability is not applicable to this Node.js project.
+          enable-reachability: false
+          enable-reachability-js: true
+          reachability-js-project-root: .
+          reachability-js-sources: >-
+            packages/**/src/**/*.ts
+            packages/**/src/**/*.tsx
+            packages/**/src/**/*.js
+            packages/**/src/**/*.jsx
+          reachability-js-excludes: >-
+            packages/**/tests/**
+            node_modules/**
+            packages/**/dist/**
+          # reachability-namespaces is for Java/JVM projects and is intentionally omitted.
           # more input parameters may follow
       # Just print the results for demonstration purposes, in a real workflow you would likely want to fail the build if the policy evaluation fails or upload the results to another system such as SSC.
       - name: Print Results

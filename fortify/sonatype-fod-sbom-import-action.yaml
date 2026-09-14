@@ -1,0 +1,368 @@
+# yaml-language-server: $schema=https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.7.0.json
+# NOTE: This action only uses Sonatype REST APIs. Sonatype vulnerability detail responses do not provide
+# created/published/updated timestamps, so those fields cannot be populated in the generated Sonatype SBOM.
+# FoD may populate these fields later during import/export processing.
+
+author: SonatypeFortifyIntegration
+
+usage:
+  header: Download, enrich and import Sonatype CycloneDX SBOM to FoD
+  description: |
+    Downloads a CycloneDX SBOM from Sonatype IQ using the stage-based endpoint,
+    optionally enriches each vulnerability in-place with remediation recommendations
+    and CVE detail from Sonatype IQ REST APIs, writes the (enriched) SBOM to a local
+    file, and imports it into Fortify on Demand via fcli.
+
+    Expected flow:
+    1) GET /api/v2/applications?publicId=<id>
+    2) GET /api/v2/cycloneDx/<version>/{applicationInternalId}/stages/{stageId}
+    3) [if --enrich=true] For each affected component purl:
+         POST /api/v2/components/remediation/application/{id}?stageId=<stage>
+        4) [if --enrich=true] For each vulnerability id:
+          GET /api/v2/vulnerabilities/{vulnerabilityId}
+    5) fcli fod oss-scan import --rel=<release> -f=<sbom-file>
+
+config:
+  rest.target.default: sonatype
+
+formatters:
+  # Constructs a fresh analysis object so analysis.detail can be set even when
+  # the original vulnerability has no analysis block.
+  analysisWithDetail:
+    state: "${vuln.analysis!=null && vuln.analysis.state!=null ? #fmt('%s',vuln.analysis.state) : null}"
+    justification: "${vuln.analysis!=null && vuln.analysis.justification!=null ? #fmt('%s',vuln.analysis.justification) : null}"
+    detail: "${abstractText}"
+  propAbstract:
+    name: "sonatype.enrichment.abstract"
+    value: "${abstractText}"
+  propRemediation:
+    name: "sonatype.enrichment.remediationText"
+    value: "${recText}"
+  refFromAdvisory:
+    id: "${vuln.id}"
+    source:
+      name: "${adv.referenceType!=null ? adv.referenceType : 'Sonatype Advisory'}"
+      url: "${adv.url}"
+  refFromVulnLink:
+    id: "${vuln.id}"
+    source:
+      name: "${vulnDetail.source!=null && vulnDetail.source.longName!=null ? vulnDetail.source.longName : 'Vulnerability Link'}"
+      url: "${vulnDetail.vulnerabilityLink}"
+  refFromLifecycleCve:
+    id: "${vuln.id}"
+    source:
+      name: "Sonatype Lifecycle"
+      url: "${#replaceAllFromRegExMap(cli['sonatype-url'], {'/+$':''})+'/assets/index.html#/vulnerabilities/'+vuln.id}"
+  ratingFromMainSeverity:
+    source:
+      name: "${vulnDetail.mainSeverity.sourceLabel!=null ? vulnDetail.mainSeverity.sourceLabel : vulnDetail.mainSeverity.source}"
+    score: "${vulnDetail.mainSeverity.score}"
+    severity: "${vulnDetail.mainSeverity.score!=null ? (vulnDetail.mainSeverity.score>=9.0 ? 'critical' : (vulnDetail.mainSeverity.score>=7.0 ? 'high' : (vulnDetail.mainSeverity.score>=4.0 ? 'medium' : 'low'))) : null}"
+    method: "other"
+    vector: "${vulnDetail.mainSeverity.vector}"
+  propEpss:
+    name: "sonatype.enrichment.epssScore"
+    value: "${#fmt('%s',vulnDetail.epssData.currentScore)}"
+  propIsKev:
+    name: "sonatype.enrichment.isKev"
+    value: "${#fmt('%s',vulnDetail.kevData.isKev)}"
+  propResearchType:
+    name: "sonatype.enrichment.researchType"
+    value: "${vulnDetail.researchType}"
+  propDetectionType:
+    name: "sonatype.enrichment.detectionType"
+    value: "${vulnDetail.detectionType}"
+
+cli.options:
+  sonatype-url:
+    names: --sonatype-url
+    description: Sonatype IQ base URL, for example https://iq.example.com
+    required: true
+  sonatype-username:
+    names: --sonatype-username
+    description: Specifies the Sonatype IQ username
+    required: true
+  sonatype-password:
+    names: --sonatype-password
+    description: Specifies the Sonatype IQ password
+    required: true
+    mask:
+      sensitivity: high
+  sonatype-app-id:
+    names: --sonatype-app-id
+    description: Sonatype application public ID
+    required: true
+  sonatype-stage:
+    names: --sonatype-stage
+    description: Sonatype stage name
+    required: false
+    default: build
+  sonatype-cyclonedx-version:
+    names: --sonatype-cyclonedx-version
+    description: CycloneDX endpoint version segment used in Sonatype download path (for example 1.6 or 1.4)
+    required: false
+    default: 1.6
+  enrich:
+    names: --enrich
+    description: Enrich vulnerabilities with Sonatype remediation recommendations and CVE details
+    type: boolean
+    required: false
+    default: true
+  fod-release:
+    names: --fod-release
+    description: FoD release identifier for --rel (id or app[:microservice]:release)
+    required: true
+  sbom-file:
+    names: --sbom-file, -f
+    description: Output CycloneDX file path
+    required: false
+    default: sonatype-sbom.cdx.json
+  fod-session:
+    names: --fod-session
+    description: FoD session name to use for import command
+    required: false
+    default: default
+
+steps:
+  - rest.target:
+      sonatype:
+        baseUrl: "${#replaceAllFromRegExMap(cli['sonatype-url'], {'/+$':''})}"
+        headers:
+          Accept: application/json
+          Authorization: "${#basicAuth(cli['sonatype-username'], cli['sonatype-password'])}"
+
+  # Step 1: Resolve internal application ID from public ID
+  - rest.call:
+      appLookup:
+        uri: /api/v2/applications
+        query:
+          publicId: "${cli['sonatype-app-id']}"
+        on.success:
+          - var.set:
+              appInternalId: "${appLookup.applications!=null && appLookup.applications.size()>0 ? appLookup.applications[0].id : null}"
+
+  # Step 2: Download CycloneDX SBOM for stage
+  - rest.call:
+      sbom:
+        uri: "/api/v2/cycloneDx/${cli['sonatype-cyclonedx-version']}/${appInternalId}/stages/${cli['sonatype-stage']}"
+
+  # Step 3: Build bom-ref → purl lookup from component list (used for remediation calls)
+  - if: "${cli['enrich']}"
+    records.for-each:
+      from: "${sbom_raw.components}"
+      record.var-name: comp
+      do:
+        - if: "${comp.purl != null}"
+          var.set:
+            "refPurl.${comp['bom-ref']}": "${comp.purl}"
+
+  # Step 3b: Build parent and top-level dependency maps from CycloneDX graph
+  - if: "${cli['enrich'] && sbom_raw.dependencies!=null}"
+    var.set:
+      rootRef: "${sbom_raw.metadata!=null && sbom_raw.metadata.component!=null ? sbom_raw.metadata.component['bom-ref'] : null}"
+
+  - if: "${cli['enrich'] && sbom_raw.dependencies!=null}"
+    records.for-each:
+      from: "${sbom_raw.dependencies}"
+      record.var-name: dep
+      do:
+        - if: "${dep.ref!=null && dep.dependsOn!=null}"
+          records.for-each:
+            from: "${dep.dependsOn}"
+            record.var-name: childRef
+            do:
+              - if: "${childRef!=null && (parentRef==null || parentRef[childRef]==null)}"
+                var.set:
+                  "parentRef.${childRef}": "${dep.ref}"
+
+        - if: "${rootRef!=null && dep.ref==rootRef && dep.dependsOn!=null}"
+          records.for-each:
+            from: "${dep.dependsOn}"
+            record.var-name: topRef
+            do:
+              - if: "${topRef!=null}"
+                var.set:
+                  "topLevelRef.${topRef}": true
+
+  # Step 4: Enrich each vulnerability in-place with remediation + CVE detail
+  - if: "${cli['enrich']}"
+    records.for-each:
+      from: "${sbom_raw.vulnerabilities}"
+      record.var-name: vuln
+      do:
+        # Reset per-iteration enrichment state
+        - var.set:
+            recText: null
+            recCount: 0
+            abstractText: null
+            affectedPurl: null
+            fullDescText: null
+
+        # POST remediation API for each affected component purl and build recommendation text
+        - if: "${vuln.affects!=null && vuln.affects.size()>0}"
+          records.for-each:
+            from: "${vuln.affects}"
+            record.var-name: aff
+            do:
+              - var.set:
+                  affectedRef: "${aff.ref}"
+                  affectedPurl: "${refPurl!=null && refPurl[aff.ref]!=null ? refPurl[aff.ref] : null}"
+
+              # Walk up dependency parents to find top-level direct dependency
+              - if: "${affectedRef!=null && parentRef!=null && topLevelRef!=null}"
+                var.set:
+                  r1: "${parentRef[affectedRef]}"
+                  r2: "${r1!=null ? parentRef[r1] : null}"
+                  r3: "${r2!=null ? parentRef[r2] : null}"
+                  r4: "${r3!=null ? parentRef[r3] : null}"
+                  r5: "${r4!=null ? parentRef[r4] : null}"
+                  r6: "${r5!=null ? parentRef[r5] : null}"
+                  r7: "${r6!=null ? parentRef[r6] : null}"
+                  r8: "${r7!=null ? parentRef[r7] : null}"
+
+              - var.set:
+                  directRef: "${topLevelRef!=null && topLevelRef[affectedRef]!=null ? affectedRef : (topLevelRef!=null && r1!=null && topLevelRef[r1]!=null ? r1 : (topLevelRef!=null && r2!=null && topLevelRef[r2]!=null ? r2 : (topLevelRef!=null && r3!=null && topLevelRef[r3]!=null ? r3 : (topLevelRef!=null && r4!=null && topLevelRef[r4]!=null ? r4 : (topLevelRef!=null && r5!=null && topLevelRef[r5]!=null ? r5 : (topLevelRef!=null && r6!=null && topLevelRef[r6]!=null ? r6 : (topLevelRef!=null && r7!=null && topLevelRef[r7]!=null ? r7 : (topLevelRef!=null && r8!=null && topLevelRef[r8]!=null ? r8 : null))))))))}"
+                  directPurl: "${directRef!=null && refPurl!=null && refPurl[directRef]!=null ? refPurl[directRef] : affectedPurl}"
+
+              - if: "${affectedPurl != null}"
+                rest.call:
+                  remCall:
+                    method: POST
+                    uri: "/api/v2/components/remediation/application/${appInternalId}"
+                    query:
+                      stageId: "${cli['sonatype-stage']}"
+                    body: '{"packageUrl":"${affectedPurl}"}'
+                    on.success:
+                      - var.set:
+                          affectedVersion: "${#substringBefore(#substringAfter(affectedPurl,'@'),'?')}"
+                          targetName: "${directPurl!=null && directPurl.startsWith('pkg:npm/') ? #substringBefore(#substringAfter(directPurl,'pkg:npm/'),'@') : (affectedPurl!=null && affectedPurl.startsWith('pkg:npm/') ? #substringBefore(#substringAfter(affectedPurl,'pkg:npm/'),'@') : 'component')}"
+                          recVersion: "${remCall.remediation!=null ? (remCall.remediation.versionChanges.?[type=='next-no-violations'].size()>0 ? #substringBefore(#substringAfter(remCall.remediation.versionChanges.?[type=='next-no-violations'][0].data.component.packageUrl,'@'),'?') : (remCall.remediation.versionChanges.?[type=='next-non-failing'].size()>0 ? #substringBefore(#substringAfter(remCall.remediation.versionChanges.?[type=='next-non-failing'][0].data.component.packageUrl,'@'),'?') : null)) : null}"
+
+                      - if: "${recVersion!=null && !recVersion.equals(affectedVersion)}"
+                        var.set:
+                          recBlock: "${'Affected transitive dependency: '+affectedPurl+'\nDirect dependency to upgrade: '+directPurl+'\nTarget safe version: '+targetName+'@'+recVersion+'.'}"
+                          recText: "${recText==null ? recBlock : recText+'\n---\n'+recBlock}"
+                          recCount: "${recCount+1}"
+                    on.fail:
+                      - log.warn: "Remediation lookup skipped for ${affectedPurl}: ${lastException.message}"
+
+        - if: "${recText!=null && recCount>1}"
+          var.set:
+            recText: "${'Multiple transitive dependencies are affected by this vulnerability:\n---\n'+recText}"
+
+        # GET vulnerability details (CVE and Sonatype IDs)
+        - if: "${vuln.id!=null}"
+          rest.call:
+            vulnDetail:
+              uri: "/api/v2/vulnerabilities/${vuln.id}"
+              on.success:
+                - var.set:
+                    vDesc: "${#ifBlank(#fmt('%s',vulnDetail.description),'N/A')}"
+                    vExpl: "${#ifBlank(#fmt('%s',vulnDetail.explanationMarkdown),'N/A')}"
+                    vDet:  "${#ifBlank(#fmt('%s',vulnDetail.detectionMarkdown),'N/A')}"
+                    vRec:  "${#ifBlank(#fmt('%s',vulnDetail.recommendationMarkdown),'N/A')}"
+                    vVec:  "${vulnDetail.mainSeverity!=null ? #ifBlank(#fmt('%s',vulnDetail.mainSeverity.vector),'N/A') : 'N/A'}"
+                    vEpss: "${vulnDetail.epssData!=null && vulnDetail.epssData.currentScore!=null ? #fmt('%s',vulnDetail.epssData.currentScore) : 'N/A'}"
+                    vKev: "${vulnDetail.kevData!=null && vulnDetail.kevData.isKev!=null ? #fmt('%s',vulnDetail.kevData.isKev) : 'N/A'}"
+                    vResearch: "${vulnDetail.researchType!=null ? vulnDetail.researchType : 'N/A'}"
+                    vDetectType: "${vulnDetail.detectionType!=null ? vulnDetail.detectionType : 'N/A'}"
+                    fullDescText: "${vDesc+'\n\nExplanation:\n'+vExpl+'\n\nDetection:\n'+vDet+'\n\nSonatype Metadata:\nEPSS: '+vEpss+'\nKEV: '+vKev+'\nResearch Type: '+vResearch+'\nDetection Type: '+vDetectType}"
+                    abstractText: "${vDesc+'<br /><strong>Explanation: </strong>'+vExpl+'<br /><strong>Detection: </strong>'+vDet+'<br /><strong>Recommendation: </strong>'+(recText!=null?recText:vRec)+'<br /><strong>Threat Vectors: </strong>'+vVec+'<br /><strong>Sonatype Metadata: </strong>EPSS='+vEpss+', KEV='+vKev+', Research Type='+vResearch+', Detection Type='+vDetectType}"
+
+                # Backfill references from Sonatype advisories when missing in source SBOM
+                - if: "${(vuln.references==null || vuln.references.size()==0) && vulnDetail.advisories!=null && vulnDetail.advisories.size()>0}"
+                  records.for-each:
+                    from: "${vulnDetail.advisories}"
+                    record.var-name: adv
+                    do:
+                      - if: "${adv.url!=null}"
+                        var.set:
+                          vuln.references..:
+                            fmt: refFromAdvisory
+
+                - if: "${(vuln.references==null || vuln.references.size()==0) && vulnDetail.vulnerabilityLink!=null}"
+                  var.set:
+                    vuln.references..:
+                      fmt: refFromVulnLink
+
+                # Backfill ratings from mainSeverity when missing in source SBOM
+                - if: "${(vuln.ratings==null || vuln.ratings.size()==0) && vulnDetail.mainSeverity!=null}"
+                  var.set:
+                    vuln.ratings..:
+                      fmt: ratingFromMainSeverity
+
+                # Backfill CWEs from vulnerability weakness information when missing in source SBOM
+                - if: "${(vuln.cwes==null || vuln.cwes.size()==0) && vulnDetail.weakness!=null && vulnDetail.weakness.cweIds!=null && vulnDetail.weakness.cweIds.size()>0}"
+                  records.for-each:
+                    from: "${vulnDetail.weakness.cweIds}"
+                    record.var-name: cwe
+                    do:
+                      - if: "${cwe.id!=null}"
+                        var.set:
+                          vuln.cwes..: "${cwe.id}"
+
+                # Optional enrichment properties for EPSS/KEV/research metadata
+                - if: "${vulnDetail.epssData!=null && vulnDetail.epssData.currentScore!=null}"
+                  var.set:
+                    vuln.properties..:
+                      fmt: propEpss
+
+                - if: "${vulnDetail.kevData!=null && vulnDetail.kevData.isKev!=null}"
+                  var.set:
+                    vuln.properties..:
+                      fmt: propIsKev
+
+                - if: "${vulnDetail.researchType!=null}"
+                  var.set:
+                    vuln.properties..:
+                      fmt: propResearchType
+
+                - if: "${vulnDetail.detectionType!=null}"
+                  var.set:
+                    vuln.properties..:
+                      fmt: propDetectionType
+              on.fail:
+                - log.warn: "CVE detail lookup skipped for ${vuln.id}: ${lastException.message}"
+
+        # Set recommendation field on vulnerability
+        - if: "${recText != null}"
+          var.set:
+            vuln.recommendation: "${recText}"
+
+        # Set description with expanded plain-text detail for FoD display
+        - if: "${fullDescText != null && fullDescText != 'N/A'}"
+          var.set:
+            vuln.description: "${fullDescText}"
+
+        # Replace (or create) the analysis object so analysis.detail is set
+        - if: "${abstractText != null}"
+          var.set:
+            vuln.analysis:
+              fmt: analysisWithDetail
+
+        # Append enrichment properties to vulnerability using formatters
+        - if: "${abstractText != null}"
+          var.set:
+            vuln.properties..:
+              fmt: propAbstract
+
+        - if: "${recText != null}"
+          var.set:
+            vuln.properties..:
+              fmt: propRemediation
+
+  # Step 5: Write SBOM file (in-place mutations are reflected in sbom_raw)
+  - out.write:
+      "${cli['sbom-file']}": "${#replaceAllFromRegExMap(#fmt('%s', sbom_raw), {'https://links\\.sonatype\\.com/products/clm/vulnerability/([A-Za-z0-9-]+)': #replaceAllFromRegExMap(cli['sonatype-url'], {'/+$':''})+'/assets/index.html#/vulnerabilities/$1', 'Sonatype Guide': 'Sonatype Lifecycle'})}"
+
+  - log.info: Wrote CycloneDX SBOM to ${cli['sbom-file']} for stage ${cli['sonatype-stage']}
+
+  # Step 6: Resolve FoD release ID and import
+  - var.set:
+      fodReleaseId: "${#fod.release(cli['fod-release']).releaseId}"
+
+  - run.fcli:
+      importSbom:
+        cmd: "fod oss-scan import --rel=${fodReleaseId} -f=\"${cli['sbom-file']}\" --fod-session=\"${cli['fod-session']}\""
+
+  - log.info: Imported SBOM ${cli['sbom-file']} into FoD release ${cli['fod-release']}

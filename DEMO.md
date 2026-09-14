@@ -12,6 +12,23 @@ npm install && npm run dev
 
 ---
 
+## Non-PQC Resilient Algorithm (CWE-326)
+
+**Endpoint:** `GET /api/v3/crypto/pqc-demo`
+**Auth:** Bearer Token
+**Fortify Tooling Detection:** SAST
+
+The endpoint intentionally calls `crypto.generateKeyPairSync('rsa', ...)` with RSA-2048. Fortify's built-in JavaScript `Node Crypto PQC` rule reports RSA key-pair generation as a non-post-quantum-resilient algorithm. The endpoint returns only the public key and is present solely for SAST/DAST training.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8888/api/v3/crypto/pqc-demo
+```
+
+**Expected:** JSON containing `algorithm: "RSA-2048"` and a PEM public key; the SAST scan reports `Weak Encryption: Non PQC Resilient Algorithm` at the RSA key-generation call.
+
+---
+
 ## 1. SQL Injection (CWE-89)
 
 **Endpoint:** `GET /api/v3/users?keywords=<payload>`  

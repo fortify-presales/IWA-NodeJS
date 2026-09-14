@@ -28,6 +28,33 @@ permissions:
   security-events: write
 
 jobs:
+  scan-runtime-base-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Scan Docker runtime base image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: node:20-slim
+          format: sarif
+          output: trivy-runtime-base-results.sarif
+          severity: CRITICAL,HIGH,MEDIUM
+          ignore-unfixed: true
+
+      #- name: Upload Trivy scan results to GitHub Security tab
+      #  uses: github/codeql-action/upload-sarif@v3
+      #  if: always()
+      #  with:
+      #    sarif_file: trivy-runtime-base-results.sarif
+
+      - name: Upload runtime base scan results as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-runtime-base-results
+          path: trivy-runtime-base-results.sarif
+          retention-days: 30
+
   build-and-scan:
     runs-on: ubuntu-latest
 

@@ -22,6 +22,7 @@ import { rolesRouter } from './api/v3/roles.js';
 import { accountRouter } from './api/v3/account.js';
 import { adminApiRouter } from './api/v3/admin.js';
 import { agentRouter } from './api/v3/agent.js';
+import { cryptoRouter } from './api/v3/crypto.js';
 import { defaultRouter } from './web/default.js';
 import { productsWebRouter } from './web/products.js';
 import { cartRouter } from './web/cart.js';
@@ -63,6 +64,7 @@ export function createApp() {
   app.use('/api/v3/account', accountRouter);
   app.use('/api/v3/admin', adminApiRouter);
   app.use('/api/v3/agent', agentRouter);
+  app.use('/api/v3/crypto', cryptoRouter);
 
   app.use('/', defaultRouter);
   app.use('/products', productsWebRouter);
