@@ -34,8 +34,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
+      - name: Install and Build
+        run: |
+          npm ci
+          npm run clean
+          npm run build
       # Perform Fortify on Demand SAST scan and import SAST results into GitHub code scanning alerts
       - name: Run FoD Scan
         uses: fortify/github-action@v3
@@ -45,7 +48,17 @@ jobs:
           FOD_CLIENT_SECRET: ${{secrets.FOD_CLIENT_SECRET}}
           DO_SETUP: true
           SETUP_EXTRA_OPTS: ${{ format('--sdlc-status Development --app-owner {0}', vars.FOD_DEFAULT_OWNER) }}
-          PACKAGE_EXTRA_OPTS: -bt none -exclude "DEMO.md" -exclude "SECURITY.md" -exclude "packages/api/tests"
+          PACKAGE_EXTRA_OPTS: >-
+            -bt none
+            -exclude "DEMO.md"
+            -exclude "SECURITY.md"
+            -exclude "packages/api/tests"
+            -exclude "packages/agent/dist"
+            -exclude "packages/api/dist"
+            -exclude "packages/web/dist"
+            -exclude "packages/shared/dist"
+            -exclude "data"
+            -exclude "logs"
           SAST_ASSESSMENT_TYPE: ${{ vars.FOD_DEFAULT_ASSESSMENT_TYPE }}
           SAST_WAIT_EXTRA_OPTS: --timeout 3h
           DO_SAST_SCAN: true
