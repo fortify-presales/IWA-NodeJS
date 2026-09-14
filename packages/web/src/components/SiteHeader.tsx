@@ -232,7 +232,7 @@ export function SiteHeader({ appName, user }: SiteHeaderProps) {
       {mobileOpen ? (
         <div
           id="mobile-nav"
-          className="border-t border-border bg-surface px-4 py-4 shadow-panel lg:hidden"
+          className="border-t border-border bg-surface px-4 py-4 shadow-panel lg:hidden max-h-[calc(100vh-4rem)] overflow-y-auto"
         >
           <form className="relative mb-4" action="/app/products" method="GET" role="search">
             <MagnifyingGlassIcon
