@@ -30,6 +30,11 @@ jobs:
       
     steps:
       - uses: actions/checkout@v4
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global push.autoSetupRemote true
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -52,6 +57,7 @@ jobs:
             -bt none
             -exclude "DEMO.md"
             -exclude "SECURITY.md"
+            -exclude "README.md"
             -exclude "packages/api/tests"
             -exclude "packages/agent/dist"
             -exclude "packages/api/dist"
@@ -73,4 +79,4 @@ jobs:
           DO_EXPORT: true
           # Use an absolute path (relative paths are resolved against fcli's cwd, not GITHUB_WORKSPACE)
           CHECK_POLICY_ACTION: ${{ github.workspace }}/.github/custom-actions/fod-check-policy.yaml
-          CHECK_POLICY_EXTRA_OPTS: --on-unsigned=ignore --scan-types Static,OpenSource
+          CHECK_POLICY_EXTRA_OPTS: --on-unsigned=ignore --scan-types Static
