@@ -17,8 +17,8 @@
     "db:reset": "rimraf data/iwa.sqlite && npm run db:seed"
   },
   "dependencies": {
-    "@iwa/agent": "1.0.0",
-    "@iwa/shared": "1.0.0",
+    "@iwa/agent": "file:../agent",
+    "@iwa/shared": "file:../shared",
     "@types/adm-zip": "^0.5.8",
     "adm-zip": "^0.6.0",
     "axios": "0.21.1",
