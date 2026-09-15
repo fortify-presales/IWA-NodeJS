@@ -27,14 +27,19 @@ jobs:
       contents: read
       security-events: write
       pull-requests: write
-      
+
     steps:
       - uses: actions/checkout@v4
+      - name: Recreate ScanCentral source path
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/Src"
+          ln -s "${GITHUB_WORKSPACE}/packages" "${GITHUB_WORKSPACE}/Src/packages"
       - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global push.autoSetupRemote true
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -68,7 +73,7 @@ jobs:
           SAST_ASSESSMENT_TYPE: ${{ vars.FOD_DEFAULT_ASSESSMENT_TYPE }}
           SAST_WAIT_EXTRA_OPTS: --timeout 3h
           DO_SAST_SCAN: true
-          DO_SCA_SCAN: false # We are using Debricked GitHub App for this
+          DO_SCA_SCAN: false # We are using debricked workflow for this
           DO_AVIATOR_AUDIT: true
           DO_AVIATOR_REMEDIATIONS: ${{ github.ref_name == 'demo/fortify-remediate' }}
           COPY_FROM_RELEASE: "${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.event.repository.default_branch }}"
