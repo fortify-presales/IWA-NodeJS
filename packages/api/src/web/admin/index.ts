@@ -111,12 +111,16 @@ router.post('/diagnostics', async (req: Request, res: Response, next: NextFuncti
       // Fix: Restrict outbound requests to an allowlist and block internal addresses
       const targetUrl = String(req.body.url);
       fetchResult = await new Promise<string>((resolve) => {
-        const client = targetUrl.startsWith('https') ? https : http;
-        client.get(targetUrl, response => {
+        const handleResponse = (response: http.IncomingMessage) => {
           let body = '';
           response.on('data', chunk => { body += chunk; });
           response.on('end', () => resolve(body));
-        }).on('error', err => resolve(err.message));
+        };
+        if (targetUrl.startsWith('https')) {
+          https.get(targetUrl, handleResponse).on('error', err => resolve(err.message));
+        } else {
+          http.get(targetUrl, handleResponse).on('error', err => resolve(err.message));
+        }
       });
     }
     setAdminReactResult(req, { kind: 'result', evalResult, fetchResult });

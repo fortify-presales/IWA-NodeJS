@@ -33,16 +33,17 @@ const services = [
 const vulnerabilities = [
   ['CWE-89', 'SQL Injection', 'GET /api/v3/users?keywords= (API / legacy UI)', 'SAST, DAST', "?keywords=' OR '1'='1"],
   ['CWE-79', 'Reflected XSS', 'GET /products?keywords=, /app/products?keywords=, /admin/users?keywords=, /app/admin/users?keywords=, /login?error=, /app/login?error=, /app/login-mfa?error=', 'SAST, DAST', '?keywords=<img src=x onerror=alert(1)>'],
-  ['CWE-79', 'Stored XSS', 'Product reviews, messages (admin view), /app/products/:id reviews, /app/user/messages, /app/user/reviews, /app/admin/messages, /app/admin/reviews', 'DAST', 'Submit <script>alert(1)</script> as review comment'],
+  ['CWE-79', 'Stored XSS', 'Product reviews, messages (admin view), /app/products/:id reviews, /app/user/messages, /app/user/reviews, /app/admin/messages, /app/admin/reviews', 'SAST, DAST', 'Submit <script>alert(1)</script> as review comment'],
   ['CWE-611', 'XXE', 'POST /user/upload-xml-file, /app/user/upload-xml-file', 'SAST, DAST', '<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/hosts">]>'],
   ['CWE-22', 'Path Traversal', 'GET /user/files/download/unverified?file= (legacy endpoint)', 'SAST, DAST', '?file=../../../etc/passwd'],
   ['CWE-78', 'OS Command Injection', 'POST /admin/command-shell, /app/admin/command-shell, /user/command-shell, /app/user/command-shell', 'SAST, DAST', 'cmd=ls; cat /etc/passwd'],
-  ['CWE-502', 'Insecure Deserialization', 'POST /user/import-settings, /app/user/import-settings', 'DAST', 'Base64 node-serialize payload with IIFE function'],
+  ['CWE-502', 'Insecure Deserialization', 'POST /user/import-settings, /app/user/import-settings', 'SAST, DAST', 'Base64 node-serialize payload with IIFE function'],
   ['CWE-117', 'Log Injection', 'POST /admin/log?val=, /app/admin/log, /user/log, /app/user/log', 'DAST', '?val=%0AINFO%20Injected%20log%20entry'],
   ['CWE-532', 'Sensitive Data in Logs', 'POST /login (passport strategy)', 'DAST', 'Check ./logs/iwa.log after login attempt'],
-  ['CWE-327, CWE-338', 'Weak Crypto / Insecure Randomness', 'src/utils/crypto.ts, VerificationService', 'SAST', 'generateInsecureToken() uses Math.random()'],
-  ['CWE-326', 'Weak Encryption: Non PQC Resilient Algorithm', 'GET /api/v3/crypto/pqc-demo', 'SAST', 'Authenticated request to generate an RSA-2048 key pair'],
-  ['CWE-352', 'CSRF Disabled', 'All state-changing web forms', 'DAST', 'Cross-origin POST has no CSRF token validation'],
+  ['CWE-327', 'Weak Cryptographic Hash', 'packages/api/src/utils/crypto.ts', 'SAST', 'md5Hash() uses MD5'],
+  ['CWE-338', 'Insecure Randomness', 'packages/api/src/utils/crypto.ts, VerificationService', 'FAA', 'generateInsecureToken() and OTP generation use Math.random()'],
+  ['CWE-326', 'Weak Encryption: Non PQC Resilient Algorithm', 'GET /api/v3/crypto/pqc-demo', 'DAST', 'Authenticated request to generate an RSA-2048 key pair'],
+  ['CWE-352', 'CSRF Disabled', 'All state-changing web forms', 'SAST, DAST', 'Cross-origin POST has no CSRF token validation'],
   ['CWE-942', 'Permissive CORS', 'src/config/security.ts', 'DAST', 'Send request with arbitrary Origin header'],
   ['CWE-601', 'Open Redirect', 'POST /login?redirect=', 'SAST, DAST', 'POST /login?redirect=http://evil.example'],
   ['CWE-798', 'Hardcoded Credentials', 'src/config/env.ts, src/web/admin/index.ts', 'SAST, DAST', 'Hardcoded JWT secret and BACKDOOR_TOKEN'],
@@ -74,7 +75,7 @@ const vulnerabilities = [
   ['CWE-1427', 'Indirect Prompt Injection via Product Data', 'search_products tool, product descriptions', 'FAA', 'Store instructions in a product description and ask the assistant to search for it'],
   ['CWE-639', 'LLM Excessive Agency / IDOR via tool call', 'POST /api/v3/agent/chat, /app/assistant', 'FAA, DAST', 'Ask the assistant to look up order ID belonging to another user'],
   ['CWE-918', 'LLM Tool SSRF', 'POST /api/v3/agent/chat, /app/assistant', 'FAA, DAST', 'Ask the assistant to fetch http://169.254.169.254/latest/meta-data/'],
-  ['CWE-79', 'LLM Insecure Output Handling', 'POST /api/v3/agent/chat, /app/assistant', 'SAST, DAST', 'Ask the assistant to reply with exactly: <img src=x onerror=alert(1)>'],
+  ['CWE-79', 'LLM Insecure Output Handling', 'POST /api/v3/agent/chat, /app/assistant', 'FAA, DAST', 'Ask the assistant to reply with exactly: <img src=x onerror=alert(1)>'],
 ];
 
 export function HomePage({ bootstrap }: { bootstrap: BootstrapData | null }) {
@@ -257,6 +258,14 @@ export function VulnerabilitiesPage() {
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="notice">
+        <strong>Detection division:</strong> Deterministic SAST identifies recognizable code-level weaknesses and
+        dataflows. DAST validates behavior against a running application. SCA identifies vulnerable or malicious
+        dependency versions. FAA (Agentic Analysis) performs contextual security analysis across the application,
+        including access control, privacy, authentication, session, randomness, CSRF, CORS, rate limiting, XSS,
+        SSRF, and LLM or agent trust boundaries. A vulnerability may therefore be covered by one analyzer without
+        appearing in the others.
       </div>
       <p>
         See <a href="/swagger-ui">API Documentation</a> for all REST endpoints.

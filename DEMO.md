@@ -523,9 +523,17 @@ the existing arbitrary-web-page injection example.
 
 ## FAA vs Traditional SAST Coverage
 
-The traditional SAST scan in `iwa-nodejs-20260908110903.fpr` reported 76 issues. It included the frontend
-sink in `packages/web/src/agentPage.tsx` for LLM output XSS, but it reported no findings in
-`packages/agent/src` for prompt injection, indirect prompt injection, or model-controlled tool invocation.
+The local Fortify SAST scan in `iwa-nodejs-20260915173034.fpr` reported 85 issues. It detected ordinary
+source-to-sink weaknesses including SQL injection, command injection, dynamic code evaluation, XXE, path
+manipulation, Zip Slip, XSS, open redirects, CSRF, weak cryptographic hashing, credential management, and
+privacy/system-information leaks. The scan included `packages/agent/src`, but did not report the LLM-specific
+prompt-injection, agent authorization, or model-controlled tool findings.
+
+The SAST scan also did not classify the RSA-2048 demonstration as the intended non-PQC weakness, did not report
+the `Math.random()` token/OTP flows as insecure randomness, and did not report the admin diagnostics URL fetch as
+SSRF. The latter was classified as insecure transport after the URL was moved to direct `http.get`/`https.get`
+calls. These are therefore labeled as DAST or FAA in the public vulnerability catalog rather than being presented
+as confirmed SAST findings.
 
 FAA reported those agent-specific trust-boundary issues in addition to the underlying order IDOR, tool SSRF,
 and frontend output-handling findings. The key FAA-specific coverage is:
@@ -543,6 +551,23 @@ and frontend output-handling findings. The key FAA-specific coverage is:
 FAA is therefore complementary to traditional SAST and DAST here: it analyzes the semantics of an LLM
 agent's instructions, tool calls, and tool-result feedback loop, while traditional SAST and DAST cover the
 ordinary code and runtime paths around that agent.
+
+The catalog's tooling labels follow this division:
+
+- **SAST** identifies recognizable source-to-sink patterns in code, such as SQL injection, command injection,
+  XXE, path manipulation, XSS, open redirects, weak hashes, and direct unsafe evaluation.
+- **DAST** validates runtime behavior such as SSRF, session and authorization behavior, rate limiting, CORS,
+  uploads, ReDoS, and other request-driven effects.
+- **SCA** identifies vulnerable or malicious dependency versions and is not a source-code finding.
+- **FAA** performs contextual security analysis across the application. In this scan it identified access
+  control/IDOR, mass assignment, privacy violations, authentication and session weaknesses, insecure randomness,
+  CSRF, CORS, rate limiting, prototype pollution, XSS, SSRF, open redirects, and other application weaknesses.
+  FAA also analyzes LLM prompt trust boundaries, indirect prompt injection, model-controlled tools, excessive
+  agency, agent-mediated IDOR/SSRF, and LLM output handling.
+
+The labels are analyzer-specific, not claims that every analyzer will report every vulnerability. A missing SAST
+finding does not mean the vulnerable behavior is absent; it may mean that the framework/API shape is not modeled
+or that the behavior belongs to DAST or FAA instead.
 
 ---
 

@@ -7,7 +7,7 @@ COPY packages/shared/package.json packages/shared/package.json
 COPY packages/agent/package.json packages/agent/package.json
 COPY packages/api/package.json packages/api/package.json
 COPY packages/web/package.json packages/web/package.json
-RUN npm ci
+RUN npm ci --ignore-scripts
 COPY . .
 # Reinstall after copying source to ensure workspace symlinks are set up
 RUN npm install --package-lock=false
