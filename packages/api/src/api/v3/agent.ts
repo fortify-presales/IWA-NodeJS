@@ -1,19 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { randomUUID } from 'node:crypto';
-import { ChatOpenAI } from '@langchain/openai';
-import { AIMessage, HumanMessage, SystemMessage, ToolMessage, type BaseMessage } from '@langchain/core/messages';
-import type { StructuredToolInterface } from '@langchain/core/tools';
-import { convertToOpenAITool } from '@langchain/core/utils/function_calling';
-import {
-  buildSystemPrompt,
-  createOrderLookupTool,
-  createShippingAddressTool,
-  createUrlFetchTool,
-  createProductSearchTool,
-} from '@iwa/agent';
-import type { AgentChatRequest, AgentChatResponse, AgentToolCallRecord } from '@iwa/shared';
+import { AgentService } from '@iwa/agent';
 import { orderRepository } from '../../repositories/OrderRepository.js';
 import { productRepository } from '../../repositories/ProductRepository.js';
+import { reviewService } from '../../services/ReviewService.js';
+import { storageService } from '../../services/StorageService.js';
 import { apiResponse } from '../../utils/web.js';
 
 const router = Router();
@@ -25,70 +15,59 @@ router.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// INSECURE: agent tool returns any order by ID with no check that it belongs to the requesting user (CWE-639)
-// Purpose: demonstrates excessive agency / broken object level authorization via an LLM tool call
-// Fix: scope the lookup to req.user.id (order.userId === req.user.id) before returning data to the model
-const MAX_TOOL_ITERATIONS = 5;
+let agent: AgentService | undefined;
 
-async function chatWithAgent(userMessage: string, conversationId: string = randomUUID()): Promise<AgentChatResponse> {
-  const toolCalls: AgentToolCallRecord[] = [];
-  const tools: StructuredToolInterface[] = [
-      createOrderLookupTool(async (orderId: string) => {
+function getAgent(): AgentService {
+  if (!agent) {
+    agent = new AgentService({
+      lookupOrder: async (orderId) => {
+        // INSECURE: agent tool returns any order without checking ownership (CWE-639)
+        // Purpose: demonstrates excessive agency / broken object-level authorization through an agent tool
+        // Fix: scope the lookup to the authenticated user before returning order data
         const order = await orderRepository.findById(orderId);
         return order ? order.toJSON() : null;
-      }),
-      // INSECURE: executes a model-requested address change without user confirmation or ownership checks (CWE-862)
-      // Purpose: demonstrates excessive agency when an LLM is allowed to perform a sensitive action
+      },
+      // INSECURE: model-requested address changes run without confirmation or ownership checks (CWE-862)
+      // Purpose: demonstrates excessive agency for a sensitive state-changing action
       // Fix: require explicit confirmation and authorize the update for the authenticated order owner
-      createShippingAddressTool(async (orderId: string, address: string) => {
+      updateShippingAddress: async (orderId, address) => {
         await orderRepository.update(orderId, { shippingAddress: address });
         return `Shipping address updated for order ${orderId}`;
-      }),
-      // INSECURE: fetches any user/model-supplied URL with no allow-list or private-address filtering (CWE-918)
-      // Purpose: demonstrates SSRF via an LLM agent tool call, including indirect prompt injection triggering it
-      // Fix: validate the URL against an allow-list of hosts and block private/link-local/metadata address ranges
-      createUrlFetchTool(async (url: string) => {
+      },
+      // INSECURE: model-controlled URL is fetched without host or private-address filtering (CWE-918)
+      // Purpose: demonstrates SSRF through an agent tool, including indirect prompt injection
+      // Fix: allow-list hosts and block private, link-local, and metadata address ranges
+      fetchUrl: async (url) => {
         const response = await fetch(url);
         return response.text();
-      }),
-      // INSECURE: returns attacker-controlled product descriptions as trusted model context (CWE-1427)
-      // Purpose: demonstrates indirect prompt injection through business data retrieved by an agent tool
-      // Fix: label retrieved content as untrusted data and prevent it from being treated as instructions
-      createProductSearchTool(async (keywords: string) => {
+      },
+      // INSECURE: product descriptions become trusted model context (CWE-1427)
+      // Purpose: demonstrates indirect prompt injection through business data
+      // Fix: label retrieved content as untrusted data and prevent it from becoming instructions
+      searchProducts: async (keywords) => {
         const result = await productRepository.search(keywords);
         return result.rows.map((product) => ({
           id: product.id,
           name: product.name,
           description: product.description,
         }));
-      }),
-  ];
-  const openAiTools = tools.map((tool) => convertToOpenAITool(tool));
-  const model = new ChatOpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
-    temperature: 0,
-  });
-  const messages: BaseMessage[] = [
-    new SystemMessage(buildSystemPrompt(userMessage)),
-    new HumanMessage(userMessage),
-  ];
-
-  for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
-    const response = await model.invoke(messages, { tools: openAiTools });
-    messages.push(response as AIMessage);
-    if (!response.tool_calls || response.tool_calls.length === 0) {
-      return { conversationId, reply: String(response.content), toolCalls };
-    }
-    for (const call of response.tool_calls) {
-      const matchedTool = tools.find((tool) => tool.name === call.name);
-      const output = matchedTool ? await matchedTool.invoke(call.args as never) : `Unknown tool: ${call.name}`;
-      toolCalls.push({ tool: call.name, input: JSON.stringify(call.args), output: String(output) });
-      messages.push(new ToolMessage({ content: String(output), tool_call_id: call.id ?? call.name }));
-    }
+      },
+      // INSECURE: model-controlled review content is persisted without sanitization (CWE-79)
+      // Purpose: demonstrates model output crossing into stored business data and later HTML rendering
+      // Fix: validate ownership and encode or sanitize review content at the rendering boundary
+      createReview: async (productId, rating, comment) => {
+        const review = await reviewService.create({ productId, rating, comment });
+        return `Review ${review.id} created for product ${productId}`;
+      },
+      // INSECURE: model-controlled path is read with traversal enabled (CWE-22)
+      // Purpose: demonstrates agent-mediated arbitrary file disclosure
+      // Fix: normalize the path and verify it remains under the upload root
+      downloadFile: async (filename) => storageService.loadAsResource(filename, true).toString('utf8').slice(0, 4000),
+      apiKey: process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
+    });
   }
-
-  return { conversationId, reply: 'Agent stopped after too many tool call iterations.', toolCalls };
+  return agent;
 }
 
 /**
@@ -103,14 +82,14 @@ async function chatWithAgent(userMessage: string, conversationId: string = rando
  */
 router.post('/chat', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { message, conversationId } = req.body as AgentChatRequest;
+    const { message, conversationId } = req.body as { message?: unknown; conversationId?: string };
     if (!message || typeof message !== 'string') {
       return res.status(400).json(apiResponse('error', 'message is required'));
     }
     if (!process.env.OPENAI_API_KEY) {
       return res.status(503).json(apiResponse('error', 'AI assistant is not configured: set OPENAI_API_KEY'));
     }
-    const result = await chatWithAgent(message, conversationId);
+    const result = await getAgent().chat(message, conversationId);
     res.json(apiResponse('success', 'OK', result));
   } catch (err) { next(err); }
 });

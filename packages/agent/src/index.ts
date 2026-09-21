@@ -1,5 +1,9 @@
 export { AgentService } from './AgentService.js';
 export type { AgentDependencies } from './AgentService.js';
+export { createReviewTool } from './tools/createReviewTool.js';
+export type { ReviewCreator } from './tools/createReviewTool.js';
+export { createFileDownloadTool } from './tools/downloadFileTool.js';
+export type { FileDownloader } from './tools/downloadFileTool.js';
 export { buildSystemPrompt } from './systemPrompt.js';
 export { createOrderLookupTool } from './tools/queryOrdersTool.js';
 export type { OrderLookup } from './tools/queryOrdersTool.js';
