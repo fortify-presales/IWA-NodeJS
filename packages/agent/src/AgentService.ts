@@ -9,12 +9,16 @@ import { createOrderLookupTool, type OrderLookup } from './tools/queryOrdersTool
 import { createShippingAddressTool, type ShippingAddressUpdater } from './tools/updateShippingAddressTool.js';
 import { createUrlFetchTool, type UrlFetcher } from './tools/fetchUrlTool.js';
 import { createProductSearchTool, type ProductSearcher } from './tools/searchProductsTool.js';
+import { createReviewTool, type ReviewCreator } from './tools/createReviewTool.js';
+import { createFileDownloadTool, type FileDownloader } from './tools/downloadFileTool.js';
 
 export interface AgentDependencies {
   lookupOrder: OrderLookup;
   updateShippingAddress: ShippingAddressUpdater;
   fetchUrl: UrlFetcher;
   searchProducts: ProductSearcher;
+  createReview: ReviewCreator;
+  downloadFile: FileDownloader;
   apiKey?: string;
   model?: string;
 }
@@ -34,6 +38,8 @@ export class AgentService {
       createShippingAddressTool(deps.updateShippingAddress),
       createUrlFetchTool(deps.fetchUrl),
       createProductSearchTool(deps.searchProducts),
+      createReviewTool(deps.createReview),
+      createFileDownloadTool(deps.downloadFile),
     ];
     this.openAiTools = this.tools.map((t) => convertToOpenAITool(t));
     this.model = new ChatOpenAI({

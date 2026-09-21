@@ -76,6 +76,8 @@ const vulnerabilities = [
   ['CWE-639', 'LLM Excessive Agency / IDOR via tool call', 'POST /api/v3/agent/chat, /app/assistant', 'FAA, DAST', 'Ask the assistant to look up order ID belonging to another user'],
   ['CWE-918', 'LLM Tool SSRF', 'POST /api/v3/agent/chat, /app/assistant', 'FAA, DAST', 'Ask the assistant to fetch http://169.254.169.254/latest/meta-data/'],
   ['CWE-79', 'LLM Insecure Output Handling', 'POST /api/v3/agent/chat, /app/assistant', 'FAA, DAST', 'Ask the assistant to reply with exactly: <img src=x onerror=alert(1)>'],
+  ['CWE-79, CWE-1427', 'LLM Review Persistence / Stored XSS', 'create_review tool, POST /api/v3/agent/chat', 'FAA, DAST', 'Ask the assistant to create a review containing <img src=x onerror=alert(1)>'],
+  ['CWE-22', 'LLM Tool Path Traversal', 'download_file tool, POST /api/v3/agent/chat', 'FAA, DAST', 'Ask the assistant to read ../../package.json'],
 ];
 
 export function HomePage({ bootstrap }: { bootstrap: BootstrapData | null }) {
