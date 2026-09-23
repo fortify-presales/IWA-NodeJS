@@ -28,7 +28,7 @@
 
 ## Phase 4: Workflow and Documentation
 
-- [x] T011 Enable `.github/workflows/fod-scan.yml` Aviator remediations only for manual runs on `demo/fortify-remediate`
+- [x] T011 Enable `.github/workflows/fod-scan.yml` Aviator remediations only for manual runs on `demo/fortify-remediate-fod`
 - [x] T012 Document exact demo workflows in `DEMO.md`
 - [x] T013 Add this spec set under `specs/015-fortify-demo-workflows/`
 

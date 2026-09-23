@@ -639,7 +639,7 @@ create issue records with Aviator fix guidance. The patch-created files are inte
 registered only under `/api/v3/remediation-demo` and are not shown in the public vulnerability table.
 
 ```bash
-git switch -c demo/fortify-remediate
+git switch -c demo/fortify-remediate-fod
 npm run demo:remediate:apply -- --demo route-visible-sqli-ssrf
 npm run build -w packages/api
 npm run test:vulns -w packages/api
@@ -649,16 +649,16 @@ git commit -m "Add Fortify remediation demo targets"
 
 Then:
 
-1. Push the `demo/fortify-remediate` branch. The FoD workflow starts automatically; a manual workflow run on the branch also works.
-2. The workflow sets `DO_AVIATOR_REMEDIATIONS=true` for both pushes and manual runs on `demo/fortify-remediate`.
+1. Push the `demo/fortify-remediate-fod` branch. The FoD workflow starts automatically; a manual workflow run on the branch also works.
+2. The workflow sets `DO_AVIATOR_REMEDIATIONS=true` for both pushes and manual runs on `demo/fortify-remediate-fod`.
 3. Fortify scans the committed demo targets, applies available Aviator remediations in CI, pushes a new remediation branch, and creates a pull request on GitHub.
 4. In FoD or SSC, filter static findings to paths containing `packages/api/src/remediationDemo`.
-5. To demo `/fortify-remediate` locally as well, check out the original `demo/fortify-remediate` branch before applying the generated PR and provide those issue IDs to the skill.
+5. To demo `/fortify-remediate` locally as well, check out the original `demo/fortify-remediate-fod` branch before applying the generated PR and provide those issue IDs to the skill.
 6. You can also use the `fcli aviator` commands to interact with the remediation demo locally:
 
 ```
 fcli fod session login ...
-fcli fod aviator apply-remediations "--rel=fortify-presales/IWA-NodeJS:demo/fortify-remediate" "--source-dir=."
+fcli fod aviator apply-remediations "--rel=fortify-presales/IWA-NodeJS:demo/fortify-remediate-fod" "--source-dir=."
 ```
 
 Demo-only route anchors:

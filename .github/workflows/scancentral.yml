@@ -1,28 +1,99 @@
-name: Fortify ScanCentral SAST Scan
+
+# Create GitHub Action Repository Variables for your version of the application:
+#   SSC_URL                     - SSC Server URL for your instance (e.g. https://ssc.example.com/ssc)
+#   SSC_DEFAULT_ISSUE_TEMPLATE  - The default issue template to use when creating application versions
+#   AVIATOR_URL                 - Aviator service URL for automated audit/remediation suggestions
+# Create GitHub Action Secrets for your version of the application:
+#   SSC_TOKEN should be an SSC authentication token with permissions to create/update application versions.
+#   SC_SAST_TOKEN should be a ScanCentral SAST client authentication token.
+#   AVIATOR_TOKEN should be the token used to authenticate against the Aviator service.
+# Helpful hints:
+#   DO_AVIATOR_REMEDIATIONS only runs on the demo/fortify-remediate-ssc branch; DO_AVIATOR_AUDIT runs otherwise.
+#   COPY_FROM_RELEASE seeds new application versions from the default branch's existing results.
+name: Fortify ScanCentral Scan
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - '.github/**'
+      - '!.github/workflows/scancentral.yml'
+  push:
+    branches: [ "main", "demo/fortify-remediate-ssc" ]
+    paths-ignore:
+      - '.github/**'
+      - '!.github/workflows/scancentral.yml'
 
 jobs:
-  fortify-sast:
+  Fortify-AST-Scan:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      pull-requests: write
+
     steps:
       - uses: actions/checkout@v4
+      - name: Recreate ScanCentral source path
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/Src"
+          ln -s "${GITHUB_WORKSPACE}/packages" "${GITHUB_WORKSPACE}/Src/packages"
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global push.autoSetupRemote true
 
-      - name: Setup Fortify Tools
-        uses: fortify/github-action/setup@v1
+      - uses: actions/setup-node@v4
         with:
-          tool-definitions: https://github.com/fortify/tool-definitions/releases/latest/download/tool-definitions.yaml
-          export-path: true
-          fcli: latest
-          scancentral-client: latest
-
-      - name: Perform Fortify ScanCentral SAST Scan
-        uses: fortify/github-action/sc-sast-scan@v1
+          node-version: '20'
+          cache: 'npm'
+      - name: Install and Build
+        run: |
+          npm ci
+          npm run clean
+          npm run build
+      # Perform FortifyScanCentral SAST/SCA/DAST scan and import results into GitHub code scanning alerts
+      - name: Run ScanCentral Scan
+        uses: fortify/github-action@v3
         env:
-          SC_SAST_TOKEN: ${{ secrets.SC_SAST_TOKEN }}
-          SCSAST_URL: ${{ secrets.SCSAST_URL }}
-          SCSAST_SENSOR_VERSION: 23.1
+          SSC_URL: ${{ vars.SSC_URL }}
+          SSC_TOKEN: ${{secrets.SSC_TOKEN}}
+          SC_SAST_TOKEN: ${{secrets.SC_SAST_TOKEN}}
+          DO_SETUP: true
+          SETUP_EXTRA_OPTS: ${{ format('--issue-template {0}', vars.SSC_DEFAULT_ISSUE_TEMPLATE) }}
+          PACKAGE_EXTRA_OPTS: >-
+            -bt none
+            -exclude "DEMO.md"
+            -exclude "SECURITY.md"
+            -exclude "README.md"
+            -exclude "**/tests/**/*"
+            -exclude "**/build/**/*"
+            -exclude "**/dist/**/*"
+            -exclude "**/node_modules/**/package-lock.json"
+            -exclude "**/node_modules/**/yarn.lock"
+            -exclude "data"
+            -exclude "logs"
+          SAST_WAIT_EXTRA_OPTS: --timeout 3h
+          DO_SAST_SCAN: true
+          #DO_DEBRICKED_SCAN: true
+          #DEBRICKED_ACCESS_TOKEN: ${{secrets.DEBRICKED_TOKEN}}
+          AVIATOR_URL: ${{ vars.AVIATOR_URL }}
+          AVIATOR_TOKEN: ${{ secrets.AVIATOR_TOKEN }}
+          DO_AVIATOR_AUDIT: true
+          #AVIATOR_APP:
+          DO_AVIATOR_REMEDIATIONS: ${{ github.ref_name == 'demo/fortify-remediate-ssc' }}
+          COPY_FROM_RELEASE: "${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.event.repository.default_branch }}"
+          #DO_DAST_SCAN: true
+          #DAST_SETTINGS: ${{ vars.DAST_SETTINGS }}
           DO_WAIT: true
+          DO_APPVERSION_SUMMARY: true
+          DO_CHECK_POLICY: true
+          DO_JOB_SUMMARY: true
+          DO_PR_COMMENT: true
           DO_EXPORT: true
-
+          # Use an absolute path (relative paths are resolved against fcli's cwd, not GITHUB_WORKSPACE)
+          #CHECK_POLICY_ACTION: ${{ github.workspace }}/.github/custom-actions/fod-check-policy.yaml
+          #CHECK_POLICY_EXTRA_OPTS: --on-unsigned=ignore --scan-types Static
