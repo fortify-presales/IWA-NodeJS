@@ -10,6 +10,7 @@
 # Helpful hints:
 #   DO_AVIATOR_REMEDIATIONS only runs on the demo/fortify-remediate-ssc branch; DO_AVIATOR_AUDIT runs otherwise.
 #   COPY_FROM_RELEASE seeds new application versions from the default branch's existing results.
+#   SC_CLIENT_VERSION pins the ScanCentral Client version to match your sensor pool (e.g. "26.3"); defaults to "auto".
 name: Fortify ScanCentral Scan
 
 on:
@@ -62,6 +63,8 @@ jobs:
           SSC_URL: ${{ vars.SSC_URL }}
           SSC_TOKEN: ${{secrets.SSC_TOKEN}}
           SC_SAST_TOKEN: ${{secrets.SC_SAST_TOKEN}}
+          # Pin to your ScanCentral SAST sensor's version so package format matches (default is "auto")
+          SC_CLIENT_VERSION: "26.3"
           DO_SETUP: true
           SETUP_EXTRA_OPTS: ${{ format('--issue-template {0}', vars.SSC_DEFAULT_ISSUE_TEMPLATE) }}
           PACKAGE_EXTRA_OPTS: >-
