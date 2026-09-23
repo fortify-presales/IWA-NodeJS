@@ -64,7 +64,7 @@ jobs:
           SSC_TOKEN: ${{secrets.SSC_TOKEN}}
           SC_SAST_TOKEN: ${{secrets.SC_SAST_TOKEN}}
           # Pin to your ScanCentral SAST sensor's version so package format matches (default is "auto")
-          SC_CLIENT_VERSION: "26.3"
+          SC_CLIENT_VERSION: ${{ vars.SC_CLIENT_VERSION }}
           DO_SETUP: true
           SETUP_EXTRA_OPTS: ${{ format('--issue-template {0}', vars.SSC_DEFAULT_ISSUE_TEMPLATE) }}
           PACKAGE_EXTRA_OPTS: >-

@@ -2,9 +2,15 @@ name: Build and Test
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ "main" ]
+    paths-ignore:
+      - '.github/**'
+      - '!.github/workflows/ci.yml'
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
+    paths-ignore:
+      - '.github/**'
+      - '!.github/workflows/ci.yml'
 
 jobs:
   build-and-test:

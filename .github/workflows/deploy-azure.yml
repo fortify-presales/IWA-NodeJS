@@ -4,7 +4,10 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: {}
+    paths-ignore:
+      - '.github/**'
+      - '!.github/workflows/deploy-azure.yml'
+  workflow_dispatch:
   schedule:
     # Nightly rebuild/redeploy so the running image reflects the latest security-tested main
     - cron: '0 3 * * *'
