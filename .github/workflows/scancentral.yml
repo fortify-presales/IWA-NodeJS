@@ -81,8 +81,8 @@ jobs:
             -exclude "logs"
           SAST_WAIT_EXTRA_OPTS: --timeout 3h
           DO_SAST_SCAN: true
-          #DO_DEBRICKED_SCAN: true
-          #DEBRICKED_ACCESS_TOKEN: ${{secrets.DEBRICKED_TOKEN}}
+          DO_DEBRICKED_SCAN: true
+          DEBRICKED_ACCESS_TOKEN: ${{secrets.DEBRICKED_TOKEN}}
           AVIATOR_URL: ${{ vars.AVIATOR_URL }}
           AVIATOR_TOKEN: ${{ secrets.AVIATOR_TOKEN }}
           AVIATOR_APP: ${{ github.repository }}
