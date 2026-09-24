@@ -85,8 +85,8 @@ jobs:
           #DEBRICKED_ACCESS_TOKEN: ${{secrets.DEBRICKED_TOKEN}}
           AVIATOR_URL: ${{ vars.AVIATOR_URL }}
           AVIATOR_TOKEN: ${{ secrets.AVIATOR_TOKEN }}
+          AVIATOR_APP: ${{ github.repository }}
           DO_AVIATOR_AUDIT: true
-          #AVIATOR_APP:
           DO_AVIATOR_REMEDIATIONS: ${{ github.ref_name == 'demo/fortify-remediate-ssc' }}
           COPY_FROM_RELEASE: "${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.event.repository.default_branch }}"
           #DO_DAST_SCAN: true
