@@ -29,6 +29,13 @@ import { cartRouter } from './web/cart.js';
 import { userRouter } from './web/user.js';
 import { adminRouter } from './web/admin/index.js';
 
+function requireAuthenticatedSpaSession(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (!req.isAuthenticated?.() || !req.user) {
+    return res.status(401).send('Authentication required');
+  }
+  next();
+}
+
 export function createApp() {
   const app = express();
 
@@ -71,6 +78,8 @@ export function createApp() {
   app.use('/', cartRouter);
   app.use('/user', userRouter);
   app.use('/admin', adminRouter);
+
+  app.use(['/app/user', '/app/user/*', '/app/admin', '/app/admin/*'], requireAuthenticatedSpaSession);
 
   app.get(['/app', '/app/*'], (_req, res) => {
     res.sendFile(path.resolve('public/app/index.html'));

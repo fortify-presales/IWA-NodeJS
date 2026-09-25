@@ -18,16 +18,24 @@ describe('frontend bootstrap', () => {
 
   it.each([
     '/app/', '/app/products', '/app/cart', '/app/vulnerabilities', '/app/assistant', '/app/login', '/app/register', '/app/forgot-password', '/app/login-mfa',
-    '/app/user/home', '/app/user/profile', '/app/user/edit-profile', '/app/user/change-password', '/app/user/orders',
-    '/app/user/messages', '/app/user/reviews', '/app/user/security', '/app/user/upload-file', '/app/user/import-settings',
-    '/app/user/upload-xml-file', '/app/user/download-file', '/app/user/command-shell', '/app/user/log',
-    '/app/admin', '/app/admin/users', '/app/admin/products', '/app/admin/orders', '/app/admin/reviews', '/app/admin/messages',
-    '/app/admin/backup', '/app/admin/diagnostics', '/app/admin/command-shell', '/app/admin/log', '/app/admin/backdoor',
   ])('serves the React shell for %s', async (route) => {
     const response = await request(createApp()).get(route);
 
     expect(response.status).toBe(200);
     expect(response.text).toContain('<div id="root"></div>');
+  });
+
+  it.each([
+    '/app/user/home', '/app/user/profile', '/app/user/edit-profile', '/app/user/change-password', '/app/user/orders',
+    '/app/user/messages', '/app/user/reviews', '/app/user/security', '/app/user/upload-file', '/app/user/import-settings',
+    '/app/user/upload-xml-file', '/app/user/download-file', '/app/user/command-shell', '/app/user/log',
+    '/app/admin', '/app/admin/users', '/app/admin/products', '/app/admin/orders', '/app/admin/reviews', '/app/admin/messages',
+    '/app/admin/backup', '/app/admin/diagnostics', '/app/admin/command-shell', '/app/admin/log', '/app/admin/backdoor',
+  ])('returns 401 for protected React route %s without a session', async (route) => {
+    const response = await request(createApp()).get(route);
+
+    expect(response.status).toBe(401);
+    expect(response.text).toContain('Authentication required');
   });
 
   it('returns JSON auth errors for the React account API', async () => {
