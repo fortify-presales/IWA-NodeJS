@@ -1,16 +1,16 @@
 name: 'Deploy to Azure Web App'
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '.github/**'
-      - '!.github/workflows/deploy-azure.yml'
+  #push:
+  #  branches:
+  #    - main
+  #  paths-ignore:
+  #    - '.github/**'
+  #    - '!.github/workflows/deploy-azure.yml'
   workflow_dispatch:
-  schedule:
+  #schedule:
     # Nightly rebuild/redeploy so the running image reflects the latest security-tested main
-    - cron: '0 3 * * *'
+  #  - cron: '0 3 * * *'
 
 permissions:
   contents: read

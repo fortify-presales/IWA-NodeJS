@@ -82,3 +82,25 @@ Azure restarts the Web App after its container configuration changes. Open the W
 | Azure cannot pull the image.                      | Confirm the image and SHA tag exist in GHCR. For a private package, configure registry credentials on the Web App.                                              |
 | The container starts but the site is unavailable. | Verify the Web App has `WEBSITES_PORT=8080`, then inspect **Log stream** or container logs in Azure.                                                            |
 | The old image is still running.                   | Confirm the workflow completed its `Update Azure Web App container image` step and wait for the App Service restart and image pull to finish.                   |
+
+## Railway Nightly Data Reset
+
+For a public Railway demo such as `https://iwa.onfortify.com`, the safest reset pattern is to redeploy the container on a schedule and let the container reset its own runtime state before the app starts.
+
+Set this Railway service variable:
+
+| Variable              | Value  | Purpose                                                                                          |
+| --------------------- | ------ | ------------------------------------------------------------------------------------------------ |
+| `RESET_DATA_ON_START` | `true` | Deletes the SQLite app database, session database, uploads, and restore files before app startup. |
+
+On startup, the app recreates the schema and seed data automatically. With a persistent Railway volume, this clears corrupted runtime data. Without a persistent volume, it is still harmless because the container filesystem is already fresh.
+
+To trigger the reset every night without Railway API tokens or deploy hooks, configure Railway to deploy the GHCR image tag that this repository publishes:
+
+1. In Railway, configure the service to run `ghcr.io/<repository-owner>/<repository-name>:latest`.
+2. Ensure Railway is set to redeploy when that image tag is updated.
+3. Enable the scheduled workflow in [`.github/workflows/railway-nightly-reset.yml`](.github/workflows/railway-nightly-reset.yml).
+
+The workflow runs at `02:00 UTC` each night and rebuilds the Docker image, pushing both `latest` and a dated `nightly-reset-YYYYMMDD` tag to GitHub Container Registry. Railway sees the `latest` image digest change, redeploys the service, the entrypoint sees `RESET_DATA_ON_START=true`, removes runtime state, and the application seeds a clean demo database.
+
+Because this is a reset-on-start switch, any normal Railway redeploy will also reset the demo data while the variable is enabled. That is usually desirable for this intentionally vulnerable training app.

@@ -25,6 +25,14 @@ describe('frontend bootstrap', () => {
     expect(response.text).toContain('<div id="root"></div>');
   });
 
+  it('serves a raw HTML logout marker on the React login route for scanners', async () => {
+    const response = await request(createApp()).get('/app/login');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['x-iwa-auth-state']).toBe('logged-out');
+    expect(response.text).toContain('WEBINSPECT_LOGOUT_CONDITION IWA_LOGIN_REQUIRED');
+  });
+
   it.each([
     '/app/user/home', '/app/user/profile', '/app/user/edit-profile', '/app/user/change-password', '/app/user/orders',
     '/app/user/messages', '/app/user/reviews', '/app/user/security', '/app/user/upload-file', '/app/user/import-settings',
@@ -35,7 +43,9 @@ describe('frontend bootstrap', () => {
     const response = await request(createApp()).get(route);
 
     expect(response.status).toBe(401);
+    expect(response.headers['x-iwa-auth-state']).toBe('logged-out');
     expect(response.text).toContain('Authentication required');
+    expect(response.text).toContain('WEBINSPECT_LOGOUT_CONDITION IWA_LOGIN_REQUIRED');
   });
 
   it('returns JSON auth errors for the React account API', async () => {

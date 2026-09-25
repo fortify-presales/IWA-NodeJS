@@ -110,6 +110,24 @@ The application UI is built with React and TypeScript from `frontend/src/` into 
 ./bin/fod-scan.sh
 ```
 
+### WebInspect Login Macro
+
+When recording a Fortify WebInspect login macro for the React SPA, use `/app/login` and one of the seeded browser users such as `user1` / `Password123!`.
+
+SPA login and logout detection can be difficult because the raw HTML shell is rendered before React updates the page. To make the authenticated state detectable, the app emits a scanner-friendly logout marker when the session is missing:
+
+```text
+WEBINSPECT_LOGOUT_CONDITION IWA_LOGIN_REQUIRED
+```
+
+Unauthenticated protected SPA routes such as `/app/user/home` and `/app/admin` also return HTTP `401` with this header:
+
+```text
+X-IWA-Auth-State: logged-out
+```
+
+If WebInspect does not automatically infer the logout condition, configure the macro logout condition to match either the marker text or the `X-IWA-Auth-State: logged-out` response header.
+
 ## End-to-End Tests
 
 ```bash

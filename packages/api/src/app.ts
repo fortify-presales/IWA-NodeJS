@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import fs from 'fs';
 import path from 'path';
 import express from 'express';
 import passport from 'passport';
@@ -29,11 +30,30 @@ import { cartRouter } from './web/cart.js';
 import { userRouter } from './web/user.js';
 import { adminRouter } from './web/admin/index.js';
 
+const logoutConditionMarker = 'WEBINSPECT_LOGOUT_CONDITION IWA_LOGIN_REQUIRED';
+
 function requireAuthenticatedSpaSession(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (!req.isAuthenticated?.() || !req.user) {
-    return res.status(401).send('Authentication required');
+    res.setHeader('X-IWA-Auth-State', 'logged-out');
+    return res.status(401).send(`Authentication required\n${logoutConditionMarker}`);
   }
+  res.setHeader('X-IWA-Auth-State', 'logged-in');
   next();
+}
+
+function sendSpaShell(req: express.Request, res: express.Response) {
+  const indexPath = path.resolve('public/app/index.html');
+  const html = fs.readFileSync(indexPath, 'utf8');
+  const loggedIn = Boolean(req.isAuthenticated?.() && req.user);
+
+  res.setHeader('X-IWA-Auth-State', loggedIn ? 'logged-in' : 'logged-out');
+
+  if (req.path === '/app/login' && !loggedIn) {
+    const marker = `<div id="webinspect-logout-condition" hidden>${logoutConditionMarker} Login</div>`;
+    return res.type('html').send(html.replace('<div id="root"></div>', `${marker}\n    <div id="root"></div>`));
+  }
+
+  return res.type('html').send(html);
 }
 
 export function createApp() {
@@ -81,9 +101,7 @@ export function createApp() {
 
   app.use(['/app/user', '/app/user/*', '/app/admin', '/app/admin/*'], requireAuthenticatedSpaSession);
 
-  app.get(['/app', '/app/*'], (_req, res) => {
-    res.sendFile(path.resolve('public/app/index.html'));
-  });
+  app.get(['/app', '/app/*'], sendSpaShell);
 
   app.use('/api', apiErrorHandler);
   app.use(notFound);
