@@ -2,7 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { AccountRoute } from './accountPages';
 import { AdminRoute } from './adminPages';
-import { AssistantPage } from './agentPage';
+import { AssistantPage, AssistantSetupPage } from './agentPage';
 import { ForgotPasswordPage, LoginPage, MfaPage, RegisterPage } from './authPages';
 import { CartPage } from './cartPage';
 import { SiteFooter } from './components/SiteFooter';
@@ -73,7 +73,7 @@ function AppRoute({
   bootstrapLoaded: boolean;
 }) {
   const path = window.location.pathname.replace(/\/$/, '');
-  const assistantNeedsLogin = path === '/app/assistant' && bootstrapLoaded && !bootstrap?.user;
+  const assistantNeedsLogin = path.startsWith('/app/assistant') && bootstrapLoaded && !bootstrap?.user;
 
   React.useEffect(() => {
     if (assistantNeedsLogin) {
@@ -94,6 +94,10 @@ function AppRoute({
   if (path === '/app/services') return <ServicesPage />;
   if (path === '/app/prescriptions') return <PrescriptionsPage bootstrap={bootstrap ?? null} />;
   if (path === '/app/vulnerabilities') return <VulnerabilitiesPage />;
+  if (path === '/app/assistant/setup') {
+    if (assistantNeedsLogin) return null;
+    return <AssistantSetupPage />;
+  }
   if (path === '/app/assistant') {
     if (assistantNeedsLogin) return null;
     return <AssistantPage />;

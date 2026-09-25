@@ -81,16 +81,16 @@ jobs:
             -exclude "logs"
           SAST_WAIT_EXTRA_OPTS: --timeout 3h
           DO_SAST_SCAN: true
-          DO_DEBRICKED_SCAN: true
+          DO_DEBRICKED_SCAN: ${{ secrets.DEBRICKED_TOKEN != '' }}
           DEBRICKED_ACCESS_TOKEN: ${{secrets.DEBRICKED_TOKEN}}
           AVIATOR_URL: ${{ vars.AVIATOR_URL }}
           AVIATOR_TOKEN: ${{ secrets.AVIATOR_TOKEN }}
           AVIATOR_APP: ${{ github.repository }}
-          DO_AVIATOR_AUDIT: true
+          DO_AVIATOR_AUDIT: ${{ vars.AVIATOR_URL != '' }}
           DO_AVIATOR_REMEDIATIONS: ${{ github.ref_name == 'demo/fortify-remediate-ssc' }}
           COPY_FROM_RELEASE: "${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.event.repository.default_branch }}"
-          #DO_DAST_SCAN: true
-          #DAST_SETTINGS: ${{ vars.DAST_SETTINGS }}
+          DO_DAST_SCAN: ${{ vars.DAST_SETTINGS != '' }}
+          DAST_SETTINGS: ${{ vars.DAST_SETTINGS }}
           DO_WAIT: true
           DO_APPVERSION_SUMMARY: true
           DO_CHECK_POLICY: true
@@ -98,5 +98,5 @@ jobs:
           DO_PR_COMMENT: true
           DO_EXPORT: true
           # Use an absolute path (relative paths are resolved against fcli's cwd, not GITHUB_WORKSPACE)
-          #CHECK_POLICY_ACTION: ${{ github.workspace }}/.github/custom-actions/fod-check-policy.yaml
-          #CHECK_POLICY_EXTRA_OPTS: --on-unsigned=ignore --scan-types Static
+          CHECK_POLICY_ACTION: ${{ github.workspace }}/.github/custom-actions/ssc-check-policy.yaml
+          CHECK_POLICY_EXTRA_OPTS: --on-unsigned=ignore

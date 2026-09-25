@@ -1,3 +1,7 @@
+[![Build and Test](https://github.com/fortify-presales/IWA-NodeJS/actions/workflows/ci.yml/badge.svg)](https://github.com/fortify-presales/IWA-NodeJS/actions/workflows/ci.yml)
+[![Fortify on Demand Scan](https://github.com/fortify-presales/IWA-NodeJS/actions/workflows/fod.yml/badge.svg)](https://github.com/fortify-presales/IWA-NodeJS/actions/workflows/fod.yml)
+[![Fortify ScanCentral Scan](https://github.com/fortify-presales/IWA-NodeJS/actions/workflows/scancentral.yml/badge.svg)](https://github.com/fortify-presales/IWA-NodeJS/actions/workflows/scancentral.yml)
+
 # IWA Pharmacy Direct — Node.js
 
 > ⚠️ **WARNING: This application is INTENTIONALLY VULNERABLE. DO NOT deploy to the internet or any production environment.**
@@ -86,6 +90,23 @@ Key endpoints:
 - `POST /api/v3/site/sign-in` — Authenticate and receive JWT
 - `GET /api/v3/products` — Browse products
 - `GET /api/v3/users` — User management (auth required)
+
+## AI Assistant Browser Setup
+
+The `/app/assistant/setup` page saves an OpenAI API key in browser `localStorage` for demos. The `/app/assistant` page reads the saved browser key and sends it to `POST /api/v3/agent/chat` as `X-OpenAI-API-Key`.
+
+For public deployments, do not configure `OPENAI_API_KEY` in the container environment. This prevents visitors from using your private server-side key.
+
+For private demos, you can still allow a shared server-side key by setting both variables in the container environment:
+
+```bash
+OPENAI_API_KEY=sk-...
+ALLOW_SERVER_OPENAI_API_KEY=true
+```
+
+Without `ALLOW_SERVER_OPENAI_API_KEY=true`, the API ignores the server environment key and requires the browser-provided key.
+
+Because this is an intentionally vulnerable app with XSS demos, use a restricted or disposable OpenAI project key for browser setup.
 
 ## Intentional Vulnerabilities
 

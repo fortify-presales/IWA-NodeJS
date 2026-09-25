@@ -2,6 +2,24 @@ import React from 'react';
 import { ChatBubbleLeftRightIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { marked } from 'marked';
 
+const openAiApiKeyStorageKey = 'iwa.openaiApiKey';
+
+function getStoredOpenAiApiKey() {
+  try {
+    return window.localStorage.getItem(openAiApiKeyStorageKey) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function setStoredOpenAiApiKey(apiKey: string) {
+  window.localStorage.setItem(openAiApiKeyStorageKey, apiKey);
+}
+
+function clearStoredOpenAiApiKey() {
+  window.localStorage.removeItem(openAiApiKeyStorageKey);
+}
+
 type ToolCallRecord = {
   tool: string;
   input: string;
@@ -17,9 +35,14 @@ type ChatTurn = {
 export function AssistantPage() {
   const [conversationId, setConversationId] = React.useState<string | undefined>(undefined);
   const [history, setHistory] = React.useState<ChatTurn[]>([]);
+  const [keyConfigured, setKeyConfigured] = React.useState(false);
   const [message, setMessage] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [pending, setPending] = React.useState(false);
+
+  React.useEffect(() => {
+    setKeyConfigured(Boolean(getStoredOpenAiApiKey()));
+  }, []);
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault();
@@ -27,10 +50,14 @@ export function AssistantPage() {
     setPending(true);
     setError(null);
     try {
+      const apiKey = getStoredOpenAiApiKey();
       const response = await fetch('/api/v3/agent/chat', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey.trim() ? { 'X-OpenAI-API-Key': apiKey.trim() } : {}),
+        },
         body: JSON.stringify({ message, conversationId }),
       });
       const payload = await response.json();
@@ -49,11 +76,16 @@ export function AssistantPage() {
 
   return (
     <section className="assistant-page">
-      <div className="mb-2 flex items-center gap-2">
-        <ChatBubbleLeftRightIcon className="h-7 w-7 text-brand-muted" aria-hidden="true" />
-        <h1 className="!mb-0">AI Assistant</h1>
+      <div className="assistant-heading">
+        <div className="mb-2 flex items-center gap-2">
+          <ChatBubbleLeftRightIcon className="h-7 w-7 text-brand-muted" aria-hidden="true" />
+          <h1 className="!mb-0">AI Assistant</h1>
+        </div>
+        <a className="assistant-setup-link" href="/app/assistant/setup">Setup</a>
       </div>
       <p>Ask about orders or products. The assistant can look up an order by ID or fetch a web page for you.</p>
+
+      {!keyConfigured ? <div className="notice compact">OpenAI key not configured. <a href="/app/assistant/setup">Open setup</a>.</div> : null}
 
       {error ? (
         <div className="danger-notice compact" role="alert">
@@ -79,6 +111,63 @@ export function AssistantPage() {
           <PaperAirplaneIcon className="h-5 w-5" aria-hidden="true" />
           {pending ? 'Sending…' : 'Send'}
         </button>
+      </form>
+    </section>
+  );
+}
+
+export function AssistantSetupPage() {
+  const [apiKey, setApiKey] = React.useState('');
+  const [message, setMessage] = React.useState('');
+
+  React.useEffect(() => {
+    setApiKey(getStoredOpenAiApiKey());
+  }, []);
+
+  function saveApiKey(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmedKey = apiKey.trim();
+    if (!trimmedKey) {
+      clearStoredOpenAiApiKey();
+      setMessage('OpenAI API key cleared for this browser.');
+      return;
+    }
+    setStoredOpenAiApiKey(trimmedKey);
+    setMessage('OpenAI API key saved for this browser.');
+  }
+
+  function clearApiKey() {
+    clearStoredOpenAiApiKey();
+    setApiKey('');
+    setMessage('OpenAI API key cleared for this browser.');
+  }
+
+  return (
+    <section className="assistant-page">
+      <div className="mb-2 flex items-center gap-2">
+        <ChatBubbleLeftRightIcon className="h-7 w-7 text-brand-muted" aria-hidden="true" />
+        <h1 className="!mb-0">Assistant Setup</h1>
+      </div>
+      <p>Save an OpenAI API key for this browser before using the assistant.</p>
+
+      {message ? <div className="notice compact">{message}</div> : null}
+
+      <form className="assistant-settings" onSubmit={saveApiKey}>
+        <label>
+          OpenAI API Key
+          <input
+            autoComplete="off"
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="sk-..."
+          />
+        </label>
+        <div className="assistant-setup-actions">
+          <button type="submit">Save Key</button>
+          <button className="danger-button" type="button" onClick={clearApiKey}>Clear Key</button>
+          <a className="button secondary outline" href="/app/assistant">Back To Assistant</a>
+        </div>
       </form>
     </section>
   );

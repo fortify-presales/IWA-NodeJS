@@ -908,6 +908,41 @@
     width: 100%;
   }
 
+  .assistant-heading {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+  }
+
+  .assistant-setup-link {
+    color: var(--color-muted);
+    font: 700 0.9rem var(--font-sans);
+    margin-top: 0.7rem;
+    text-decoration: none;
+  }
+
+  .assistant-setup-link:hover {
+    color: var(--color-brand);
+    text-decoration: underline;
+  }
+
+  .assistant-settings {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    display: grid;
+    gap: 1rem;
+    margin: 1rem 0;
+    padding: 1rem;
+  }
+
+  .assistant-setup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
   .assistant-history {
     display: grid;
     gap: 1rem;
