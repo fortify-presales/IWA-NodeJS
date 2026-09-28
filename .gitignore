@@ -30,3 +30,5 @@ fortifypackage.zip
 *.json
 core_javascript.xml
 extended_javascript.xml
+xxe.xml
+downloaded-win.ini

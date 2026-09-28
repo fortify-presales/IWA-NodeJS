@@ -51,6 +51,11 @@ test('normal users can access their React account but not the admin UI', async (
   await page.goto('/app/admin');
   await expect(page.getByRole('heading', { name: 'Admin' })).toBeVisible();
   await expect(page.getByText('Admin access required')).toBeVisible();
+
+  await page.goto('/logout');
+  const response = await page.request.get('/app/user/home');
+  expect(response.status()).toBe(401);
+  expect(await response.text()).toBe('Authentication required');
 });
 
 test('admins can access the React dashboard and management data', async ({ page }) => {

@@ -3,7 +3,7 @@
 const baseUrl = (process.env.IWA_BASE_URL ?? 'http://localhost:8888').replace(/\/$/, '');
 const username = process.env.IWA_USERNAME ?? 'user1';
 const password = process.env.IWA_PASSWORD ?? 'Password123!';
-const defaultComment = "<img src=x onerror=alert('StoredXSS')>";
+const defaultComment = "<img src=x onerror=alert('StoredXSS')>StoredXSS";
 
 function option(name, fallback) {
   const index = process.argv.indexOf(`--${name}`);
