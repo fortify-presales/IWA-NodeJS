@@ -105,10 +105,17 @@ function AccountHome({ summary }: { summary: AccountSummary }) {
       <AccountBreadcrumb current="My Account" />
       <h1>My Account</h1>
       <div className="account-grid">
-        <AccountTile href="/app/user/profile" title="Profile" value={summary.user.username} icon={UserCircleIcon} />
-        <AccountTile href="/app/user/orders" title="Orders" value={String(summary.orders.length)} icon={ShoppingBagIcon} />
-        <AccountTile href="/app/user/messages" title="Messages" value={summary.unreadMessages > 0 ? `${summary.unreadMessages} new` : 'None new'} icon={ChatBubbleLeftRightIcon} />
-        <AccountTile href="/app/user/reviews" title="Reviews" value={String(summary.reviews.length)} icon={ClipboardDocumentListIcon} />
+        <AccountTile href="/app/user/profile" title="Profile" value={summary.user.username} icon={UserCircleIcon} variant="profile" />
+        <AccountTile href="/app/user/orders" title="Orders" value={String(summary.orders.length)} icon={ShoppingBagIcon} variant="orders" />
+        <AccountTile
+          href="/app/user/messages"
+          title="Messages"
+          value={String(summary.unreadMessages)}
+          icon={ChatBubbleLeftRightIcon}
+          variant="messages"
+          isNew={summary.unreadMessages > 0}
+        />
+        <AccountTile href="/app/user/reviews" title="Reviews" value={String(summary.reviews.length)} icon={ClipboardDocumentListIcon} variant="reviews" />
       </div>
     </section>
   );
@@ -355,17 +362,26 @@ function AccountTile({
   title,
   value,
   icon: Icon,
+  variant,
+  isNew = false,
 }: {
   href: string;
   title: string;
   value: string;
   icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  variant: 'profile' | 'orders' | 'messages' | 'reviews';
+  isNew?: boolean;
 }) {
   return (
-    <a className="account-tile" href={href}>
-      {Icon ? <Icon className="h-6 w-6 text-brand-muted" aria-hidden="true" /> : null}
-      <span>{title}</span>
-      <strong>{value}</strong>
+    <a className={`account-tile account-${variant}`} href={href}>
+      {Icon ? <Icon className="account-tile-watermark" aria-hidden="true" /> : null}
+      <div className="account-tile-content">
+        <span>{title}</span>
+        <div className="account-tile-value">
+          <strong>{value}</strong>
+          {isNew ? <span className="account-new-tag">New</span> : null}
+        </div>
+      </div>
     </a>
   );
 }

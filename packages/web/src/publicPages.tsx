@@ -1,6 +1,9 @@
 import React, { type ComponentType, type SVGProps } from 'react';
 import {
   BookOpenIcon,
+  ChatBubbleLeftRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   ClipboardDocumentListIcon,
   ShieldExclamationIcon,
   ShoppingBagIcon,
@@ -81,6 +84,48 @@ const vulnerabilities = [
 ];
 
 export function HomePage({ bootstrap }: { bootstrap: BootstrapData | null }) {
+  const testimonialViewport = React.useRef<HTMLDivElement>(null);
+  const testimonialBand = React.useRef<HTMLElement>(null);
+
+  function scrollTestimonials(direction: number) {
+    const viewport = testimonialViewport.current;
+    const track = viewport?.firstElementChild;
+    const firstCard = track?.firstElementChild;
+    if (!viewport || !track || !firstCard) return;
+
+    const trackStyle = window.getComputedStyle(track);
+    const distance = firstCard.getBoundingClientRect().width + Number.parseFloat(trackStyle.columnGap || '0');
+    const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+    const atEnd = viewport.scrollLeft >= maxScroll - 1;
+    const atStart = viewport.scrollLeft <= 1;
+
+    if (direction > 0 && atEnd) {
+      viewport.scrollTo({ left: 0, behavior: 'smooth' });
+    } else if (direction < 0 && atStart) {
+      viewport.scrollTo({ left: maxScroll, behavior: 'smooth' });
+    } else {
+      viewport.scrollBy({ left: direction * distance, behavior: 'smooth' });
+    }
+  }
+
+  React.useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+
+    const interval = window.setInterval(() => {
+      const band = testimonialBand.current;
+      if (
+        document.visibilityState === 'visible'
+        && band
+        && !band.matches(':hover')
+        && !band.contains(document.activeElement)
+      ) {
+        scrollTestimonials(1);
+      }
+    }, 6000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
   return (
     <div className="page-frame home-page">
       <section className="home-hero">
@@ -107,6 +152,10 @@ export function HomePage({ bootstrap }: { bootstrap: BootstrapData | null }) {
               <ClipboardDocumentListIcon className="h-5 w-5" aria-hidden="true" />
               Prescriptions
             </a>
+            <a className="button assistant-cta" href="/app/assistant">
+              <ChatBubbleLeftRightIcon className="h-5 w-5" aria-hidden="true" />
+              Ask Olive
+            </a>
           </div>
         </div>
       </section>
@@ -118,6 +167,7 @@ export function HomePage({ bootstrap }: { bootstrap: BootstrapData | null }) {
           detail="Available on qualifying orders."
           href="/app/services"
           icon={TruckIcon}
+          variant="shipping"
         />
         <Promo
           title="Season Sale 50% Off"
@@ -125,6 +175,7 @@ export function HomePage({ bootstrap }: { bootstrap: BootstrapData | null }) {
           detail="Browse discounted products now."
           href="/app/products"
           icon={TagIcon}
+          variant="sale"
         />
         <Promo
           title="Health Advice"
@@ -132,15 +183,29 @@ export function HomePage({ bootstrap }: { bootstrap: BootstrapData | null }) {
           detail="Get practical guidance today."
           href="/app/advice"
           icon={BookOpenIcon}
+          variant="advice"
         />
       </section>
 
-      <section className="testimonial-band">
-        <h2>Testimonials</h2>
-        <div className="testimonial-grid">
-          <Testimonial image="/img/person_1.jpg" quote="Excellent service and great value. Highly recommended." name="Sarah Peters" />
-          <Testimonial image="/img/person_2.jpg" quote="Quick delivery and easy online ordering experience." name="Brent Easter" />
-          <Testimonial image="/img/person_3.jpg" quote="Helpful advice and quality products for my family." name="Lucas Gallione" />
+      <section className="testimonial-band" ref={testimonialBand}>
+        <div className="testimonial-heading">
+          <h2>Testimonials</h2>
+          <div className="testimonial-controls" aria-label="Testimonial navigation">
+            <button type="button" className="testimonial-control" aria-label="Previous testimonials" onClick={() => scrollTestimonials(-1)}>
+              <ChevronLeftIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <button type="button" className="testimonial-control" aria-label="Next testimonials" onClick={() => scrollTestimonials(1)}>
+              <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <div className="testimonial-viewport" ref={testimonialViewport}>
+          <div className="testimonial-grid">
+            <Testimonial image="/img/person_1.jpg" quote="Excellent service and great value. Highly recommended." name="Sarah Peters" />
+            <Testimonial image="/img/person_2.jpg" quote="Quick delivery and easy online ordering experience." name="Brent Easter" />
+            <Testimonial image="/img/person_3.jpg" quote="Helpful advice and quality products for my family." name="Lucas Gallione" />
+            <Testimonial image="/img/person_4.jpg" quote="The pharmacist explained my prescription clearly and helped me feel confident about my treatment." name="Martin van Dyck" />
+          </div>
         </div>
       </section>
     </div>
@@ -318,19 +383,23 @@ function Promo({
   detail,
   href,
   icon: Icon,
+  variant,
 }: {
   title: string;
   text: string;
   detail: string;
   href: string;
   icon: ComponentType<SVGProps<SVGSVGElement>>;
+  variant: 'shipping' | 'sale' | 'advice';
 }) {
   return (
-    <a className="promo-card" href={href}>
-      <Icon className="mb-3 h-7 w-7 text-brand-muted" aria-hidden="true" />
-      <h2>{title}</h2>
-      <p>{text}</p>
-      <strong>{detail}</strong>
+    <a className={`promo-card promo-${variant}`} href={href}>
+      <Icon className="promo-card-watermark" aria-hidden="true" />
+      <div className="promo-card-content">
+        <h2>{title}</h2>
+        <p>{text}</p>
+        <strong>{detail}</strong>
+      </div>
     </a>
   );
 }

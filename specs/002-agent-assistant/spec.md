@@ -1,4 +1,4 @@
-# Feature Specification: Conversational AI Assistant
+# Feature Specification: Conversational AI Assistant (Olive)
 
 **Status**: Draft | **Branch**: `002-agent-assistant` | **Date**: 2026-09-02
 **Input**: Historical feature request to add an LLM assistant with order lookup and web fetch tools.

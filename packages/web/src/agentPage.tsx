@@ -79,11 +79,11 @@ export function AssistantPage() {
       <div className="assistant-heading">
         <div className="mb-2 flex items-center gap-2">
           <ChatBubbleLeftRightIcon className="h-7 w-7 text-brand-muted" aria-hidden="true" />
-          <h1 className="!mb-0">AI Assistant</h1>
+          <h1 className="!mb-0">Ask Olive</h1>
         </div>
         <a className="assistant-setup-link" href="/app/assistant/setup">Setup</a>
       </div>
-      <p>Ask about orders or products. The assistant can look up an order by ID or fetch a web page for you.</p>
+      <p>Ask me about medicines or treatments. I can look up the status of your orders or even help you review a purchase.</p>
 
       {!keyConfigured ? <div className="notice compact">OpenAI key not configured. <a href="/app/assistant/setup">Open setup</a>.</div> : null}
 
@@ -104,7 +104,7 @@ export function AssistantPage() {
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="e.g. What's the status of order 1234?"
+          placeholder="e.g. What's the status of order ORD-001"
           disabled={pending}
         />
         <button type="submit" disabled={pending}>

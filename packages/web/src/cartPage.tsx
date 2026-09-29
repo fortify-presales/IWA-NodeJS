@@ -21,6 +21,7 @@ function imageSrc(product: Product) {
 export function CartPage({ currency, user }: CartPageProps) {
   const [items, setItems] = React.useState<CartProduct[]>([]);
   const [status, setStatus] = React.useState('Loading cart');
+  const itemAdded = new URLSearchParams(window.location.search).get('added') === '1';
 
   React.useEffect(() => {
     loadCartProducts().then((products) => {
@@ -47,6 +48,7 @@ export function CartPage({ currency, user }: CartPageProps) {
     <section className="page-frame content-page cart-page">
       <div className="page-kicker"><a href="/app/products">Shop</a> / <strong>Cart</strong></div>
       <h1>Shopping Cart</h1>
+      {itemAdded ? <div className="notice cart-added" role="status">Item added to your cart.</div> : null}
       {items.length === 0 ? (
         <div className="notice">Your shopping cart is empty. <a href="/app/products">Continue Shopping</a></div>
       ) : (

@@ -20,6 +20,11 @@ function productUrl(productId: string) {
   return `/app/products/${productId}`;
 }
 
+function addToCartAndOpenCart(productId: string, quantity: number) {
+  addToCart(productId, quantity);
+  window.location.assign('/app/cart?added=1');
+}
+
 export function ProductCatalog({ currency }: CatalogProps) {
   const productId = window.location.pathname.match(/^\/app\/products\/([^/]+)/)?.[1];
   return productId ? <ProductDetail currency={currency} productId={productId} /> : <ProductList currency={currency} />;
@@ -95,7 +100,7 @@ function ProductList({ currency }: CatalogProps) {
             </a>
             <h2><a href={productUrl(product.id)}>{product.name}</a></h2>
             <Price currency={currency} product={product} />
-            <button type="button" onClick={() => addToCart(product.id, 1)}>
+            <button type="button" onClick={() => addToCartAndOpenCart(product.id, 1)}>
               <ShoppingCartIcon className="h-5 w-5" aria-hidden="true" />
               Add to Cart
             </button>
@@ -165,7 +170,7 @@ function ProductDetail({ currency, productId }: CatalogProps & { productId: stri
               type="number"
               value={quantity}
             />
-            <button disabled={!product.inStock} onClick={() => addToCart(product.id, quantity)} type="button">
+            <button disabled={!product.inStock} onClick={() => addToCartAndOpenCart(product.id, quantity)} type="button">
               <ShoppingCartIcon className="h-5 w-5" aria-hidden="true" />
               Add To Cart
             </button>

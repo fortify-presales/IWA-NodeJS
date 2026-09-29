@@ -345,10 +345,12 @@ function Stat({
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 }) {
   return (
-    <article className="admin-stat">
-      <Icon className="mx-auto mb-2 h-6 w-6 text-brand-muted" aria-hidden="true" />
-      <strong>{value}</strong>
-      <span>{label}</span>
+    <article className={`admin-stat admin-stat-${label.toLowerCase()}`}>
+      <Icon className="admin-stat-watermark" aria-hidden="true" />
+      <div className="admin-stat-content">
+        <strong>{value}</strong>
+        <span>{label}</span>
+      </div>
     </article>
   );
 }

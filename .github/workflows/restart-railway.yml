@@ -1,0 +1,23 @@
+name: Nightly Railway Restart
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Railway CLI
+        run: npm install --global @railway/cli
+
+      - name: Restart Railway service
+        run: |
+          if [ -z "$RAILWAY_SERVICE" ]; then
+            echo "::error::Set the RAILWAY_SERVICE repository variable to the Railway service name or ID."
+            exit 1
+          fi
+          railway restart --yes --service "$RAILWAY_SERVICE"
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE }}

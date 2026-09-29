@@ -1,4 +1,4 @@
-# Tasks: Conversational AI Assistant
+# Tasks: Conversational AI Assistant (Olive)
 
 **Input**: Design documents from `specs/002-agent-assistant/` (`spec.md`, `plan.md`)
 **Tests**: Vulnerability regression coverage is required by Constitution Principle II.

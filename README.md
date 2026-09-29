@@ -91,7 +91,7 @@ Key endpoints:
 - `GET /api/v3/products` — Browse products
 - `GET /api/v3/users` — User management (auth required)
 
-## AI Assistant Browser Setup
+## AI Assistant (Olive) Browser Setup
 
 The `/app/assistant/setup` page saves an OpenAI API key in browser `localStorage` for demos. The `/app/assistant` page reads the saved browser key and sends it to `POST /api/v3/agent/chat` as `X-OpenAI-API-Key`.
 

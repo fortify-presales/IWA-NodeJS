@@ -1,4 +1,4 @@
-# Implementation Plan: Conversational AI Assistant
+# Implementation Plan: Conversational AI Assistant (Olive)
 
 **Branch**: `002-agent-assistant` | **Date**: 2026-09-02 | **Spec**: [spec.md](./spec.md)
 

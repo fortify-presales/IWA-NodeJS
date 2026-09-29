@@ -52,7 +52,7 @@ const shopLinks: NavLink[] = [
 const adviceLinks: NavLink[] = [
   { href: '/app/services', label: 'Services', icon: BuildingStorefrontIcon },
   { href: '/app/advice', label: 'Advice', icon: BookOpenIcon },
-  { href: '/app/assistant', label: 'AI Assistant', icon: ChatBubbleLeftRightIcon },
+  { href: '/app/assistant', label: 'Ask Olive', icon: ChatBubbleLeftRightIcon },
 ];
 
 function pathMatches(href: string) {
@@ -107,6 +107,7 @@ export function SiteHeader({ appName, user }: SiteHeaderProps) {
         { href: '/app/user/home', label: 'Account Home', icon: HomeIcon },
         { href: '/app/user/profile', label: 'Profile', icon: UserCircleIcon },
         { href: '/app/user/orders', label: 'Orders', icon: ClipboardDocumentListIcon },
+        { href: '/app/user/reviews', label: 'Reviews', icon: ClipboardDocumentListIcon },
         { href: '/app/user/messages', label: 'Messages', icon: ChatBubbleLeftRightIcon },
         ...(user.authorities.includes('ROLE_ADMIN')
           ? [{ href: '/app/admin', label: 'Site Administration', icon: Cog6ToothIcon }]

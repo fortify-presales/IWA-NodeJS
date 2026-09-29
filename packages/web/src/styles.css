@@ -192,6 +192,16 @@
     color: var(--color-brand);
   }
 
+  .button.assistant-cta {
+    background: #216b68;
+    color: #fff;
+  }
+
+  .button.assistant-cta:hover {
+    background: #185854;
+    color: #fff;
+  }
+
   .button.outline,
   .button.secondary.outline {
     background: transparent;
@@ -226,6 +236,12 @@
     background: #fff5f4;
     border-color: rgb(180 51 42 / 0.35);
     color: #6d1f1a;
+  }
+
+  .cart-added {
+    background: #e5f2ee;
+    border-color: #b8d8cd;
+    color: #1d4b3a;
   }
 
   .search-form {
@@ -493,7 +509,6 @@
   }
 
   .promo-grid,
-  .testimonial-grid,
   .info-grid,
   .account-grid,
   .admin-stats,
@@ -507,7 +522,6 @@
 
   @media (min-width: 700px) {
     .promo-grid,
-    .testimonial-grid,
     .info-grid,
     .account-grid,
     .admin-stats {
@@ -521,6 +535,10 @@
   }
 
   @media (min-width: 1024px) {
+    .admin-stats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
     .admin-actions {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
@@ -538,6 +556,148 @@
     padding: 1.25rem;
     text-decoration: none;
     transition: box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  .promo-card {
+    min-height: 12rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .promo-shipping {
+    background: #e5f2ee;
+    border-color: #b8d8cd;
+  }
+
+  .promo-sale {
+    background: #fff1d6;
+    border-color: #e8d09b;
+  }
+
+  .promo-advice {
+    background: #e8f0fb;
+    border-color: #c3d5ed;
+  }
+
+  .account-tile {
+    min-height: 9rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .account-profile {
+    background: #e5f2ee;
+    border-color: #b8d8cd;
+  }
+
+  .account-orders {
+    background: #fff1d6;
+    border-color: #e8d09b;
+  }
+
+  .account-messages {
+    background: #e8f0fb;
+    border-color: #c3d5ed;
+  }
+
+  .account-reviews {
+    background: #f4eafa;
+    border-color: #dcc4e8;
+  }
+
+  .admin-stat {
+    min-height: 9rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .admin-stat-users {
+    background: #e5f2ee;
+    border-color: #b8d8cd;
+  }
+
+  .admin-stat-products {
+    background: #fff1d6;
+    border-color: #e8d09b;
+  }
+
+  .admin-stat-orders {
+    background: #e8f0fb;
+    border-color: #c3d5ed;
+  }
+
+  .admin-stat-messages {
+    background: #f4eafa;
+    border-color: #dcc4e8;
+  }
+
+  .admin-stat-watermark {
+    color: var(--color-brand-muted);
+    height: 8rem;
+    opacity: 0.14;
+    pointer-events: none;
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8rem;
+  }
+
+  .admin-stat-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .account-tile-watermark {
+    color: var(--color-brand-muted);
+    height: 8rem;
+    opacity: 0.14;
+    pointer-events: none;
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8rem;
+  }
+
+  .account-tile-content {
+    display: grid;
+    gap: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .account-tile-value {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .account-tile .account-new-tag {
+    background: var(--color-danger);
+    border-radius: 999px;
+    color: #fff;
+    font: 700 0.72rem var(--font-sans);
+    padding: 0.2rem 0.55rem;
+    text-transform: uppercase;
+  }
+
+  .promo-card-watermark {
+    color: currentColor;
+    height: 8rem;
+    opacity: 0.14;
+    pointer-events: none;
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8rem;
+  }
+
+  .promo-card-content {
+    position: relative;
+    z-index: 1;
   }
 
   .promo-card:hover,
@@ -564,8 +724,69 @@
     margin-top: 2.5rem;
   }
 
+  .testimonial-heading {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .testimonial-heading h2 {
+    margin: 0;
+  }
+
+  .testimonial-controls {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .testimonial-control {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    color: var(--color-brand);
+    height: 2.5rem;
+    padding: 0.5rem;
+    width: 2.5rem;
+  }
+
+  .testimonial-control:hover:not(:disabled) {
+    background: var(--color-surface-deep);
+  }
+
+  .testimonial-viewport {
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+  }
+
+  .testimonial-viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  .testimonial-grid {
+    display: grid;
+    gap: 1rem;
+    grid-auto-columns: 100%;
+    grid-auto-flow: column;
+  }
+
+  @media (min-width: 640px) {
+    .testimonial-grid {
+      grid-auto-columns: calc((100% - 1rem) / 2);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .testimonial-grid {
+      grid-auto-columns: calc((100% - 2rem) / 3);
+    }
+  }
+
   .testimonial-card {
     padding: 1.25rem;
+    scroll-snap-align: start;
     text-align: center;
   }
 
