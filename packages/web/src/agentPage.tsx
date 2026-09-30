@@ -24,6 +24,7 @@ type ToolCallRecord = {
   tool: string;
   input: string;
   output: string;
+  denied?: boolean;
 };
 
 type ChatTurn = {
@@ -32,7 +33,7 @@ type ChatTurn = {
   toolCalls: ToolCallRecord[];
 };
 
-export function AssistantPage() {
+export function AssistantPage({ signedIn = false, bootstrapLoaded = false }: { signedIn?: boolean; bootstrapLoaded?: boolean }) {
   const [conversationId, setConversationId] = React.useState<string | undefined>(undefined);
   const [history, setHistory] = React.useState<ChatTurn[]>([]);
   const [keyConfigured, setKeyConfigured] = React.useState(false);
@@ -84,6 +85,14 @@ export function AssistantPage() {
         <a className="assistant-setup-link" href="/app/assistant/setup">Setup</a>
       </div>
       <p>Ask me about medicines or treatments. I can look up the status of your orders or even help you review a purchase.</p>
+
+      {bootstrapLoaded && !signedIn ? (
+        <div className="notice compact">
+          You are browsing as a guest. I can search products and answer general questions.{' '}
+          <a href={`/app/login?redirect=${encodeURIComponent('/app/assistant')}`}>Sign in</a> for order lookups and
+          shipping address changes.
+        </div>
+      ) : null}
 
       {!keyConfigured ? <div className="notice compact">OpenAI key not configured. <a href="/app/assistant/setup">Open setup</a>.</div> : null}
 
@@ -180,9 +189,10 @@ function AssistantTurn({ turn }: { turn: ChatTurn }) {
         <strong>You:</strong> {turn.message}
       </p>
       {turn.toolCalls.map((call, i) => (
-        <p key={i} className="assistant-turn-tool">
+        <p key={i} className={call.denied ? 'assistant-turn-tool assistant-turn-tool-denied' : 'assistant-turn-tool'}>
           <em>
-            Called {call.tool}({call.input})
+            {call.denied ? 'Blocked (sign-in required): ' : 'Called '}
+            {call.tool}({call.input})
           </em>
         </p>
       ))}
@@ -195,5 +205,10 @@ function AssistantReply({ reply }: { reply: string }) {
   // INSECURE: agent reply rendered into the DOM without sanitization (CWE-79)
   // Purpose: demonstrates insecure output handling for an LLM agent - a prompt-injected reply can execute script
   // Fix: render the reply as plain text (let React escape it) or sanitize with an allow-list HTML sanitizer
-  return <div className="assistant-turn-reply" dangerouslySetInnerHTML={{ __html: String(marked.parse(reply)) }} />;
+  return <div className="assistant-turn-reply" dangerouslySetInnerHTML={{ __html: toSiteRelativeLinks(String(marked.parse(reply))) }} />;
+}
+
+// The model likes to invent a hostname for the site-relative paths the tools return; pin them back to this origin.
+function toSiteRelativeLinks(html: string): string {
+  return html.replace(/href="https?:\/\/[^"/]+(\/(?:app|user|api)\/[^"]*)"/gi, 'href="$1"');
 }

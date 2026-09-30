@@ -19,6 +19,29 @@ import {
 } from '@heroicons/react/24/outline';
 import { BrandLogo } from './BrandLogo';
 import { CartCount } from '../cartPage';
+import { resolvePreferredCurrency, setStoredCurrency, SUPPORTED_CURRENCIES } from '../currency';
+
+function CurrencyPicker() {
+  const [currency, setCurrency] = React.useState(() => resolvePreferredCurrency());
+
+  // Reload so every rendered price picks up the new locale formatting.
+  function change(next: string) {
+    setCurrency(next);
+    setStoredCurrency(next);
+    window.location.reload();
+  }
+
+  return (
+    <select
+      aria-label="Display currency"
+      className="currency-picker"
+      onChange={(event) => change(event.target.value)}
+      value={currency}
+    >
+      {SUPPORTED_CURRENCIES.map((code) => <option key={code} value={code}>{code}</option>)}
+    </select>
+  );
+}
 
 export type BootstrapUser = null | {
   id: number | string;
@@ -200,6 +223,7 @@ export function SiteHeader({ appName, user }: SiteHeaderProps) {
             Cart
             <CartCount />
           </a>
+          <CurrencyPicker />
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:hidden">

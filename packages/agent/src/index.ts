@@ -13,3 +13,4 @@ export { createUrlFetchTool } from './tools/fetchUrlTool.js';
 export type { UrlFetcher } from './tools/fetchUrlTool.js';
 export { createProductSearchTool } from './tools/searchProductsTool.js';
 export type { ProductSearcher } from './tools/searchProductsTool.js';
+export { AUTH_REQUIRED_TOOLS, PUBLIC_TOOLS, SIGN_IN_MESSAGE, requiresAuthentication } from './tools/toolAccess.js';

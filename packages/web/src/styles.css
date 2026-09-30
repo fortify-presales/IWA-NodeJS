@@ -1182,6 +1182,19 @@
     font-size: 0.9rem;
   }
 
+  .currency-picker {
+    min-height: 0;
+    width: auto;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-brand);
+  }
+
+  .assistant-turn-tool-denied {
+    color: #9a3412;
+  }
+
   .assistant-turn-reply {
     line-height: 1.65;
   }

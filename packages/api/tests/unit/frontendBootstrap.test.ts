@@ -48,6 +48,14 @@ describe('frontend bootstrap', () => {
     expect(response.headers['x-iwa-auth-state']).toBeUndefined();
   });
 
+  it('accepts anonymous assistant chat requests instead of returning 401', async () => {
+    const response = await request(createApp())
+      .post('/api/v3/agent/chat')
+      .send({ message: 'find ibuprofen' });
+
+    expect(response.status).not.toBe(401);
+  });
+
   it('returns JSON auth errors for the React account API', async () => {
     const response = await request(createApp()).get('/api/v3/account/summary');
 

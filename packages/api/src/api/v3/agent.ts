@@ -8,28 +8,25 @@ import { apiResponse } from '../../utils/web.js';
 
 const router = Router();
 
-router.use((req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated?.() || !req.user) {
-    return res.status(401).json(apiResponse('error', 'Authentication required'));
-  }
-  next();
-});
-
-function createAgent(apiKey: string): AgentService {
+// INSECURE: anonymous callers reach the fetch_url (CWE-918) and create_review (CWE-79) tools with no auth (CWE-306)
+// Purpose: demonstrates pre-authentication reachability of agent tool vulnerabilities
+// Fix: require authentication for every state-changing or outbound-request tool
+function createAgent(apiKey: string, authenticated: boolean): AgentService {
   return new AgentService({
+    authenticated,
     lookupOrder: async (orderId) => {
       // INSECURE: agent tool returns any order without checking ownership (CWE-639)
       // Purpose: demonstrates excessive agency / broken object-level authorization through an agent tool
       // Fix: scope the lookup to the authenticated user before returning order data
       const order = await orderRepository.findById(orderId);
-      return order ? order.toJSON() : null;
+      return order ? { ...order.toJSON(), url: '/app/user/orders', invoiceUrl: `/user/orders/${orderId}/invoice.pdf` } : null;
     },
     // INSECURE: model-requested address changes run without confirmation or ownership checks (CWE-862)
     // Purpose: demonstrates excessive agency for a sensitive state-changing action
     // Fix: require explicit confirmation and authorize the update for the authenticated order owner
     updateShippingAddress: async (orderId, address) => {
       await orderRepository.update(orderId, { shippingAddress: address });
-      return `Shipping address updated for order ${orderId}`;
+      return `Shipping address updated for order ${orderId}. Review it at /app/user/orders`;
     },
     // INSECURE: model-controlled URL is fetched without host or private-address filtering (CWE-918)
     // Purpose: demonstrates SSRF through an agent tool, including indirect prompt injection
@@ -47,6 +44,7 @@ function createAgent(apiKey: string): AgentService {
         id: product.id,
         name: product.name,
         description: product.description,
+        url: `/app/products/${product.id}`,
       }));
     },
     // INSECURE: model-controlled review content is persisted without sanitization (CWE-79)
@@ -54,7 +52,7 @@ function createAgent(apiKey: string): AgentService {
     // Fix: validate ownership and encode or sanitize review content at the rendering boundary
     createReview: async (productId, rating, comment) => {
       const review = await reviewService.create({ productId, rating, comment });
-      return `Review ${review.id} created for product ${productId}`;
+      return `Review ${review.id} created for product ${productId}. View it at /app/products/${productId}#reviews-start or in /app/user/reviews`;
     },
     // INSECURE: model-controlled path is read with traversal enabled (CWE-22)
     // Purpose: demonstrates agent-mediated arbitrary file disclosure
@@ -82,6 +80,10 @@ function getOpenAiApiKey(req: Request): string | null {
  *   post:
  *     tags: [Agent]
  *     summary: Chat with the IWA Pharmacy Direct AI assistant
+ *     description: >
+ *       Callable anonymously. Order lookup, shipping address changes and file downloads are
+ *       refused unless the caller has an authenticated session.
+ *     security: []
  *     responses:
  *       200:
  *         description: Agent reply
@@ -96,7 +98,8 @@ router.post('/chat', async (req: Request, res: Response, next: NextFunction) => 
     if (!apiKey) {
       return res.status(503).json(apiResponse('error', 'Enter your OpenAI API key in the assistant settings.'));
     }
-    const result = await createAgent(apiKey).chat(message, conversationId);
+    const authenticated = Boolean(req.isAuthenticated?.() && req.user);
+    const result = await createAgent(apiKey, authenticated).chat(message, conversationId);
     res.json(apiResponse('success', 'OK', result));
   } catch (err) { next(err); }
 });

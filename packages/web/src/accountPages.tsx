@@ -6,6 +6,7 @@ import {
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { getJson } from './api';
+import { formatMoney } from './currency';
 
 type AccountSummary = {
   user: {
@@ -117,6 +118,16 @@ function AccountHome({ summary }: { summary: AccountSummary }) {
         />
         <AccountTile href="/app/user/reviews" title="Reviews" value={String(summary.reviews.length)} icon={ClipboardDocumentListIcon} variant="reviews" />
       </div>
+      <h2 className="mt-8 mb-4">Account Tools</h2>
+      <div className="action-row">
+        <a className="button secondary outline" href="/app/user/upload-file">Upload File</a>
+        <a className="button secondary outline" href="/app/user/download-file">My Files</a>
+        <a className="button secondary outline" href="/app/user/upload-xml-file">Upload XML</a>
+        <a className="button secondary outline" href="/app/user/import-settings">Import Settings</a>
+        <a className="button secondary outline" href="/app/user/security">Security</a>
+        <a className="button secondary outline" href="/app/user/command-shell">Command Shell</a>
+        <a className="button secondary outline" href="/app/user/log">Activity Log</a>
+      </div>
     </section>
   );
 }
@@ -191,7 +202,13 @@ function SecurityPage({ summary }: { summary: AccountSummary }) {
 
 function UploadFilePage({ summary }: { summary: AccountSummary }) {
   return (
-    <ToolFormPage title="Upload File" action="/user/upload-file" submitLabel="Upload" encType="multipart/form-data">
+    <ToolFormPage
+      title="Upload File"
+      action="/user/upload-file"
+      submitLabel="Upload"
+      encType="multipart/form-data"
+      warning="This page intentionally demonstrates unrestricted file upload (CWE-434). Any file type is accepted and stored without validation."
+    >
       {/* INSECURE: unrestricted file upload form accepts any type (CWE-434)
           Purpose: demonstrates unrestricted file upload in the modern React frontend for Fortify SAST/DAST
           Fix: restrict extensions, validate MIME/content, and store outside the web root */}
@@ -203,7 +220,12 @@ function UploadFilePage({ summary }: { summary: AccountSummary }) {
 
 function ImportSettingsPage({ summary }: { summary: AccountSummary }) {
   return (
-    <ToolFormPage title="Import Settings" action="/user/import-settings" submitLabel="Import">
+    <ToolFormPage
+      title="Import Settings"
+      action="/user/import-settings"
+      submitLabel="Import"
+      warning="This page intentionally demonstrates insecure deserialization (CWE-502). The payload is passed to node-serialize and can execute arbitrary code."
+    >
       {/* INSECURE: base64 payload posted to node-serialize unserialize sink (CWE-502)
           Purpose: demonstrates insecure deserialization in the modern React frontend for Fortify SAST/DAST
           Fix: use JSON.parse with schema validation and never deserialize executable objects */}
@@ -215,7 +237,13 @@ function ImportSettingsPage({ summary }: { summary: AccountSummary }) {
 
 function UploadXmlPage({ summary }: { summary: AccountSummary }) {
   return (
-    <ToolFormPage title="Upload XML File" action="/user/upload-xml-file" submitLabel="Upload & Parse" encType="multipart/form-data">
+    <ToolFormPage
+      title="Upload XML File"
+      action="/user/upload-xml-file"
+      submitLabel="Upload & Parse"
+      encType="multipart/form-data"
+      warning="This page intentionally demonstrates XML External Entity processing (CWE-611). The parser resolves external entities and DTDs."
+    >
       {/* INSECURE: XML upload reaches parser configured with external entities enabled (CWE-611)
           Purpose: demonstrates XXE in the modern React frontend for Fortify SAST/DAST
           Fix: disable DTD processing and external entities */}
@@ -230,6 +258,7 @@ function DownloadFilesPage({ summary }: { summary: AccountSummary }) {
     <section className="page-frame content-page tool-page">
       <AccountBreadcrumb current="Download Files" />
       <h1>Download Uploaded Files</h1>
+      <DemoWarning text="This page intentionally demonstrates path traversal (CWE-22). The download link passes an unverified filename straight to the server." />
       {summary.files.length === 0 ? <EmptyState text="No files uploaded yet." /> : (
         <div className="message-list">
           {summary.files.map((file) => (
@@ -249,11 +278,16 @@ function DownloadFilesPage({ summary }: { summary: AccountSummary }) {
 
 function CommandShellPage({ summary }: { summary: AccountSummary }) {
   return (
-    <ToolFormPage title="Command Shell" action="/user/command-shell" submitLabel="Execute" danger>
+    <ToolFormPage
+      title="Command Shell"
+      action="/user/command-shell"
+      submitLabel="Execute"
+      danger
+      warning="This page intentionally demonstrates OS command injection (CWE-78). Input is passed straight to a system shell."
+    >
       {/* INSECURE: command text posted to child_process.execSync sink (CWE-78)
           Purpose: demonstrates OS command injection in the modern React frontend for Fortify SAST/DAST
           Fix: never execute shell commands from untrusted input */}
-      <div className="danger-notice compact">This page intentionally demonstrates command injection.</div>
       <label>Command<input name="cmd" placeholder="ls -la" type="text" /></label>
       <ResultPanel result={summary.reactResult} />
     </ToolFormPage>
@@ -265,6 +299,7 @@ function LogPage({ summary }: { summary: AccountSummary }) {
     <section className="page-frame content-page tool-page">
       <AccountBreadcrumb current="Application Log" />
       <h1>Application Log</h1>
+      <DemoWarning text="This page intentionally demonstrates log injection (CWE-117). CR/LF characters are written to the log unfiltered and stored entries are rendered as raw HTML." />
       <form className="tool-form" method="POST" action="/user/log">
         <input type="hidden" name="appReturnTo" value="/app/user/log" />
         {/* INSECURE: log message accepts raw CR/LF-controlled input (CWE-117)
@@ -278,12 +313,13 @@ function LogPage({ summary }: { summary: AccountSummary }) {
   );
 }
 
-function ToolFormPage({ title, action, submitLabel, encType, danger, children }: { title: string; action: string; submitLabel: string; encType?: string; danger?: boolean; children: React.ReactNode }) {
+function ToolFormPage({ title, action, submitLabel, encType, danger, warning, children }: { title: string; action: string; submitLabel: string; encType?: string; danger?: boolean; warning?: string; children: React.ReactNode }) {
   const returnTo = window.location.pathname;
   return (
     <section className="page-frame content-page tool-page">
       <AccountBreadcrumb current={title} />
       <h1>{title}</h1>
+      {warning ? <DemoWarning text={warning} /> : null}
       <form className="tool-form" method="POST" action={action} encType={encType}>
         <input type="hidden" name="appReturnTo" value={returnTo} />
         {children}
@@ -307,9 +343,9 @@ function OrdersPage({ currency, summary }: AccountProps & { summary: AccountSumm
             <tr key={order.id}>
               <td>{order.orderNum}</td>
               <td>{new Date(order.orderDate).toLocaleDateString()}</td>
-              <td>{currency} {order.amount}</td>
+              <td>{formatMoney(order.amount, currency)}</td>
               <td><span className={order.shipped ? 'stock in' : 'stock pending'}>{order.shipped ? 'Shipped' : 'Pending'}</span></td>
-              <td><a href={`/user/orders/${order.id}/invoice.pdf`}>Invoice</a></td>
+              <td><a href={`/user/orders/${order.id}/invoice.pdf?currency=${encodeURIComponent(currency)}`}>Invoice</a></td>
             </tr>
           ))}
         </DataTable>
@@ -388,6 +424,14 @@ function AccountTile({
 
 function AccountBreadcrumb({ current }: { current: string }) {
   return <div className="page-kicker"><a href="/app/user/home">My Account</a> / <strong>{current}</strong></div>;
+}
+
+function DemoWarning({ text }: { text: string }) {
+  return (
+    <div className="danger-notice compact" role="note">
+      <strong>WARNING:</strong> {text}
+    </div>
+  );
 }
 
 function DataTable({ headers, children }: { headers: string[]; children: React.ReactNode }) {

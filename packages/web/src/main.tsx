@@ -7,6 +7,7 @@ import { ForgotPasswordPage, LoginPage, MfaPage, RegisterPage } from './authPage
 import { CartPage } from './cartPage';
 import { SiteFooter } from './components/SiteFooter';
 import { SiteHeader } from './components/SiteHeader';
+import { resolvePreferredCurrency } from './currency';
 import { ProductCatalog } from './products';
 import { AdvicePage, HomePage, PrescriptionsPage, ServicesPage, VulnerabilitiesPage } from './publicPages';
 import './styles.css';
@@ -73,34 +74,26 @@ function AppRoute({
   bootstrapLoaded: boolean;
 }) {
   const path = window.location.pathname.replace(/\/$/, '');
-  const assistantNeedsLogin = path.startsWith('/app/assistant') && bootstrapLoaded && !bootstrap?.user;
-
-  React.useEffect(() => {
-    if (assistantNeedsLogin) {
-      window.location.replace(`/app/login?redirect=${encodeURIComponent('/app/assistant')}`);
-    }
-  }, [assistantNeedsLogin]);
+  const currency = resolvePreferredCurrency(bootstrap?.currency);
 
   if (path === '/app' || path === '') return <HomePage bootstrap={bootstrap ?? null} />;
   if (path === '/app/login') return <LoginPage user={bootstrap?.user ?? null} />;
   if (path === '/app/login-mfa') return <MfaPage />;
   if (path === '/app/register') return <RegisterPage user={bootstrap?.user ?? null} />;
   if (path === '/app/forgot-password') return <ForgotPasswordPage />;
-  if (path === '/app/cart') return <CartPage currency={bootstrap?.currency ?? 'GBP'} user={bootstrap?.user ?? null} />;
-  if (path.startsWith('/app/admin')) return <AdminRoute />;
-  if (path.startsWith('/app/user')) return <AccountRoute currency={bootstrap?.currency ?? 'GBP'} />;
-  if (path.startsWith('/app/products')) return <ProductCatalog currency={bootstrap?.currency ?? 'GBP'} />;
+  if (path === '/app/cart') return <CartPage currency={currency} user={bootstrap?.user ?? null} />;
+  if (path.startsWith('/app/admin')) return <AdminRoute currency={currency} />;
+  if (path.startsWith('/app/user')) return <AccountRoute currency={currency} />;
+  if (path.startsWith('/app/products')) return <ProductCatalog currency={currency} />;
   if (path === '/app/advice') return <AdvicePage />;
   if (path === '/app/services') return <ServicesPage />;
   if (path === '/app/prescriptions') return <PrescriptionsPage bootstrap={bootstrap ?? null} />;
   if (path === '/app/vulnerabilities') return <VulnerabilitiesPage />;
   if (path === '/app/assistant/setup') {
-    if (assistantNeedsLogin) return null;
     return <AssistantSetupPage />;
   }
   if (path === '/app/assistant') {
-    if (assistantNeedsLogin) return null;
-    return <AssistantPage />;
+    return <AssistantPage signedIn={Boolean(bootstrap?.user)} bootstrapLoaded={bootstrapLoaded} />;
   }
 
   return <Preview bootstrap={bootstrap ?? null} />;

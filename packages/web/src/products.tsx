@@ -2,14 +2,11 @@ import React from 'react';
 import { MagnifyingGlassIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 import { addToCart } from './cart';
 import { getJson, Product, ProductListData, Review } from './api';
+import { formatMoney } from './currency';
 
 type CatalogProps = {
   currency: string;
 };
-
-function formatPrice(value: number | string) {
-  return Number(value || 0).toFixed(2);
-}
 
 function imageSrc(product: Product, fallback: string) {
   if (!product.image) return fallback;
@@ -208,9 +205,9 @@ function StoredReviewComment({ html }: { html: string }) {
 
 function Price({ currency, product }: CatalogProps & { product: Product }) {
   if (product.onSale) {
-    return <p className="price"><del>{currency} {formatPrice(product.price)}</del> <span>{currency} {formatPrice(product.salePrice)}</span></p>;
+    return <p className="price"><del>{formatMoney(product.price, currency)}</del> <span>{formatMoney(product.salePrice, currency)}</span></p>;
   }
-  return <p className="price"><span>{currency} {formatPrice(product.price)}</span></p>;
+  return <p className="price"><span>{formatMoney(product.price, currency)}</span></p>;
 }
 
 function StockBadge({ product }: { product: Product }) {

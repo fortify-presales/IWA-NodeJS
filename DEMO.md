@@ -778,13 +778,35 @@ npm audit
 ## 19. LLM AI Agent (CWE-1427, CWE-639, CWE-918, CWE-79, CWE-22)
 
 **Endpoint:** `POST /api/v3/agent/chat` — body `{"message": "<payload>", "conversationId": "<optional>"}`  
-**Auth:** Session cookie (login first) or Bearer Token  
+**Auth:** None required. A session cookie (or Bearer token) unlocks the authenticated-only tools.  
 **React UI:** `http://localhost:8888/app/assistant`  
 **Fortify Tooling Detection:** FAA, DAST
 **Requires:** `OPENAI_API_KEY` environment variable (optionally `OPENAI_MODEL`, defaults to `gpt-4o-mini`); without it the endpoint returns 503.
 
-Sign in first, then POST to the assistant. The assistant can call tools for order lookup, address changes,
-URL fetching, product search, review creation, and file download.
+### Tool access tiers
+
+The chat endpoint itself is unauthenticated. Tool access is decided per tool call inside
+`AgentService.chat()` (see `packages/agent/src/tools/toolAccess.ts`):
+
+| Tool | Anonymous | Signed in | Demonstrates |
+| --- | --- | --- | --- |
+| `search_products` | ✅ | ✅ | CWE-1427 indirect prompt injection |
+| `fetch_url` | ✅ | ✅ | CWE-918 SSRF — **reachable pre-authentication** |
+| `create_review` | ✅ | ✅ | CWE-79 stored XSS — **an anonymous visitor can persist script into the catalogue** |
+| `lookup_order` | ❌ | ✅ | CWE-639 IDOR |
+| `change_shipping_address` | ❌ | ✅ | CWE-862 excessive agency |
+| `download_file` | ❌ | ✅ | CWE-22 path traversal |
+
+Anonymous calls to a gated tool are recorded in the response with `"denied": true` and the model is
+handed a "sign in first" tool result instead of the real output. The gated tools are still
+completely unauthorized *once you are signed in* — any logged-in account reaches any order.
+
+> ⚠️ The pre-auth `create_review` path means the stored-XSS demo needs **no account at all**: an
+> unauthenticated request can plant script that later executes for admins browsing reviews. Reset the
+> demo data after showing this.
+
+Sign in first for the order-related payloads below. The assistant can call tools for order lookup,
+address changes, URL fetching, product search, review creation, and file download.
 
 ### Bash
 

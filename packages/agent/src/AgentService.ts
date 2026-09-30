@@ -11,6 +11,7 @@ import { createUrlFetchTool, type UrlFetcher } from './tools/fetchUrlTool.js';
 import { createProductSearchTool, type ProductSearcher } from './tools/searchProductsTool.js';
 import { createReviewTool, type ReviewCreator } from './tools/createReviewTool.js';
 import { createFileDownloadTool, type FileDownloader } from './tools/downloadFileTool.js';
+import { requiresAuthentication, SIGN_IN_MESSAGE } from './tools/toolAccess.js';
 
 export interface AgentDependencies {
   lookupOrder: OrderLookup;
@@ -19,6 +20,7 @@ export interface AgentDependencies {
   searchProducts: ProductSearcher;
   createReview: ReviewCreator;
   downloadFile: FileDownloader;
+  authenticated?: boolean;
   apiKey?: string;
   model?: string;
 }
@@ -31,8 +33,10 @@ export class AgentService {
   private readonly model: ChatOpenAI;
   private readonly tools: StructuredToolInterface[];
   private readonly openAiTools: ReturnType<typeof convertToOpenAITool>[];
+  private readonly authenticated: boolean;
 
   constructor(deps: AgentDependencies) {
+    this.authenticated = deps.authenticated ?? false;
     this.tools = [
       createOrderLookupTool(deps.lookupOrder),
       createShippingAddressTool(deps.updateShippingAddress),
@@ -52,7 +56,7 @@ export class AgentService {
   async chat(userMessage: string, conversationId: string = randomUUID()): Promise<AgentChatResponse> {
     const toolCalls: AgentToolCallRecord[] = [];
     const messages: BaseMessage[] = [
-      new SystemMessage(buildSystemPrompt(userMessage)),
+      new SystemMessage(buildSystemPrompt(userMessage, this.authenticated)),
       new HumanMessage(userMessage),
     ];
 
@@ -61,17 +65,28 @@ export class AgentService {
       messages.push(response as AIMessage);
 
       if (!response.tool_calls || response.tool_calls.length === 0) {
-        return { conversationId, reply: String(response.content), toolCalls };
+        return { conversationId, reply: String(response.content), toolCalls, authenticated: this.authenticated };
       }
 
       for (const call of response.tool_calls) {
-        const matchedTool = this.tools.find((t) => t.name === call.name);
-        const output = matchedTool ? await matchedTool.invoke(call.args as never) : `Unknown tool: ${call.name}`;
-        toolCalls.push({ tool: call.name, input: JSON.stringify(call.args), output: String(output) });
-        messages.push(new ToolMessage({ content: String(output), tool_call_id: call.id ?? call.name }));
+        const denied = requiresAuthentication(call.name) && !this.authenticated;
+        const matchedTool = denied ? undefined : this.tools.find((t) => t.name === call.name);
+        let output: string;
+        if (denied) {
+          output = SIGN_IN_MESSAGE;
+        } else {
+          output = String(matchedTool ? await matchedTool.invoke(call.args as never) : `Unknown tool: ${call.name}`);
+        }
+        toolCalls.push({ tool: call.name, input: JSON.stringify(call.args), output, denied });
+        messages.push(new ToolMessage({ content: output, tool_call_id: call.id ?? call.name }));
       }
     }
 
-    return { conversationId, reply: 'Agent stopped after too many tool call iterations.', toolCalls };
+    return {
+      conversationId,
+      reply: 'Agent stopped after too many tool call iterations.',
+      toolCalls,
+      authenticated: this.authenticated,
+    };
   }
 }

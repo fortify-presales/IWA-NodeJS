@@ -5,6 +5,7 @@ export interface AgentProduct {
   id: string;
   name: string;
   description: string;
+  url?: string;
 }
 
 export type ProductSearcher = (keywords: string) => Promise<AgentProduct[]>;
@@ -14,7 +15,7 @@ export function createProductSearchTool(searchProducts: ProductSearcher) {
     async ({ keywords }: { keywords: string }) => JSON.stringify(await searchProducts(keywords)),
     {
       name: 'search_products',
-      description: 'Search products and return their names and descriptions.',
+      description: 'Search products and return their names, descriptions and site URLs.',
       schema: z.object({ keywords: z.string().describe('Product name or topic to search for') }),
     },
   );

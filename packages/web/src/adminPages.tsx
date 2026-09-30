@@ -14,6 +14,11 @@ import {
   UsersIcon,
 } from '@heroicons/react/24/outline';
 import { getJson } from './api';
+import { formatMoney } from './currency';
+
+type AdminProps = {
+  currency: string;
+};
 
 type AdminSummary = {
   stats: Record<'users' | 'products' | 'orders' | 'reviews' | 'messages', number>;
@@ -59,7 +64,7 @@ type AdminSummary = {
   };
 };
 
-export function AdminRoute() {
+export function AdminRoute({ currency }: AdminProps) {
   const [summary, setSummary] = React.useState<AdminSummary | null>(null);
   const [status, setStatus] = React.useState('Loading admin');
   const path = window.location.pathname.replace(/\/$/, '');
@@ -77,8 +82,8 @@ export function AdminRoute() {
   if (!summary) return <AdminGate message="Admin data unavailable" />;
 
   if (path === '/app/admin/users') return <UsersPage summary={summary} />;
-  if (path === '/app/admin/products') return <ProductsPage summary={summary} />;
-  if (path === '/app/admin/orders') return <OrdersPage summary={summary} />;
+  if (path === '/app/admin/products') return <ProductsPage currency={currency} summary={summary} />;
+  if (path === '/app/admin/orders') return <OrdersPage currency={currency} summary={summary} />;
   if (path === '/app/admin/reviews') return <ReviewsPage summary={summary} />;
   if (path === '/app/admin/messages') return <MessagesPage summary={summary} />;
   if (path === '/app/admin/backup') return <BackupPage summary={summary} />;
@@ -169,12 +174,12 @@ function UsersPage({ summary }: { summary: AdminSummary }) {
   );
 }
 
-function ProductsPage({ summary }: { summary: AdminSummary }) {
-  return <TablePage title="Product Management" headers={['Code', 'Name', 'Price', 'In Stock']} rows={summary.products.map((product) => [product.code, product.name, String(product.price), product.inStock ? 'Yes' : 'No'])} />;
+function ProductsPage({ currency, summary }: AdminProps & { summary: AdminSummary }) {
+  return <TablePage title="Product Management" headers={['Code', 'Name', 'Price', 'In Stock']} rows={summary.products.map((product) => [product.code, product.name, formatMoney(product.price, currency), product.inStock ? 'Yes' : 'No'])} />;
 }
 
-function OrdersPage({ summary }: { summary: AdminSummary }) {
-  return <TablePage title="Order Management" headers={['Order #', 'User', 'Amount', 'Status']} rows={summary.orders.map((order) => [order.orderNum, order.user?.username ?? '', String(order.amount), order.shipped ? 'Shipped' : 'Pending'])} />;
+function OrdersPage({ currency, summary }: AdminProps & { summary: AdminSummary }) {
+  return <TablePage title="Order Management" headers={['Order #', 'User', 'Amount', 'Status']} rows={summary.orders.map((order) => [order.orderNum, order.user?.username ?? '', formatMoney(order.amount, currency), order.shipped ? 'Shipped' : 'Pending'])} />;
 }
 
 function ReviewsPage({ summary }: { summary: AdminSummary }) {

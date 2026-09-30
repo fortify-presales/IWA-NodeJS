@@ -1,6 +1,7 @@
 import React from 'react';
 import { CartItem, cartUpdatedEvent, clearCart, readCart, removeCartItem, replaceCart, serializeCart, updateCartItem } from './cart';
 import { getJson, Product } from './api';
+import { formatMoney } from './currency';
 
 type CartPageProps = {
   currency: string;
@@ -61,7 +62,7 @@ export function CartPage({ currency, user }: CartPageProps) {
                   <tr key={item.id}>
                     <td className="cart-product"><img src={imageSrc(item)} alt={item.name} /><span>{item.name}</span></td>
                     <td><input aria-label={`Quantity for ${item.name}`} min="1" onChange={(event) => setQuantity(item.id, Number(event.target.value) || 1)} type="number" value={item.quantity} /></td>
-                    <td>{currency} {(price(item) * item.quantity).toFixed(2)}</td>
+                    <td>{formatMoney(price(item) * item.quantity, currency)}</td>
                     <td><button type="button" onClick={() => remove(item.id)}>Remove</button></td>
                   </tr>
                 ))}
@@ -71,7 +72,7 @@ export function CartPage({ currency, user }: CartPageProps) {
           <div className="cart-actions">
             <a className="button secondary outline" href="/app/products">Continue Shopping</a>
             <button className="button secondary outline" onClick={() => { clearCart(); setItems([]); }} type="button">Clear Cart</button>
-            <div className="cart-total">Cart Total: <strong>{currency} {total.toFixed(2)}</strong></div>
+            <div className="cart-total">Cart Total: <strong>{formatMoney(total, currency)}</strong></div>
             <form method="POST" action="/cart/checkout" onSubmit={() => { if (user) clearCart(); }}>
               <input type="hidden" name="appReturnTo" value="/app/cart" />
               <input type="hidden" name="cartJson" value={serializeCart()} />

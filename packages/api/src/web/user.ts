@@ -10,7 +10,7 @@ import { requireAuth } from '../middleware/requireAuth.js';
 import { userService } from '../services/UserService.js';
 import { orderService } from '../services/OrderService.js';
 import { storageService } from '../services/StorageService.js';
-import { pdfService } from '../services/PdfService.js';
+import { pdfService, resolveInvoiceCurrency } from '../services/PdfService.js';
 import { verificationService } from '../services/VerificationService.js';
 import { emailService } from '../services/EmailService.js';
 import { smsService } from '../services/SmsService.js';
@@ -131,7 +131,7 @@ router.get('/orders/:id/invoice.pdf', async (req: Request, res: Response, next: 
   try {
     const order = await orderService.findById(req.params.id);
     if (!order) return res.status(404).render('error', { title: 'Not found', message: 'Order not found', stack: '' });
-    const pdf = await pdfService.generateInvoice(order);
+    const pdf = await pdfService.generateInvoice(order, resolveInvoiceCurrency(req.query.currency));
     res.setHeader('Content-Type', 'application/pdf');
     res.send(pdf);
   } catch (err) { next(err); }
