@@ -144,8 +144,13 @@ function ProductDetail({ currency, productId }: CatalogProps & { productId: stri
           <table className="product-info">
             <tbody>
               <tr><th scope="row">Code:</th><td>{product.code}</td></tr>
-              <tr><th scope="row">Manufacturer:</th><td>Unknown</td></tr>
-              <tr><th scope="row">Contents:</th><td>Unspecified</td></tr>
+              <tr><th scope="row">Manufacturer:</th><td>{product.brand || 'Unknown'}</td></tr>
+              <tr><th scope="row">Category:</th><td>{product.category}</td></tr>
+              {product.activeIngredient ? <tr><th scope="row">Active ingredient:</th><td>{product.activeIngredient}</td></tr> : null}
+              <tr>
+                <th scope="row">Contents:</th>
+                <td>{product.quantity} x {product.form}{product.strength ? ` (${product.strength})` : ''}</td>
+              </tr>
               <tr><th scope="row">Date First Available:</th><td>{new Date(product.dateCreated).toLocaleDateString()}</td></tr>
             </tbody>
           </table>
@@ -158,6 +163,8 @@ function ProductDetail({ currency, productId }: CatalogProps & { productId: stri
           <p>{product.summary}</p>
           <h2>Description</h2>
           <p>{product.description}</p>
+          {product.warning ? <><h2>Warning</h2><p>{product.warning}</p></> : null}
+          {product.usageNotes ? <><h2>Usage Notes</h2><p>{product.usageNotes}</p></> : null}
           <div className="detail-price"><Price currency={currency} product={product} /> <StockBadge product={product} /></div>
           <div className="quantity-row">
             <input

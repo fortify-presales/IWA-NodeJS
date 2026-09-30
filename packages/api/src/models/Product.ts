@@ -17,10 +17,88 @@ export class Product extends Model {
   declare name: string;
 
   @Column(DataType.STRING)
+  declare category: string;
+
+  @Column(DataType.STRING)
+  declare subcategory: string;
+
+  @Column(DataType.STRING)
+  declare brand: string;
+
+  @Column(DataType.STRING)
+  declare activeIngredient: string | null;
+
+  @Column(DataType.STRING)
+  declare strength: string | null;
+
+  @Column(DataType.STRING)
+  declare form: string;
+
+  @Column(DataType.INTEGER)
+  declare quantity: number;
+
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  declare onPrescription: boolean;
+
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  declare pharmacyOnly: boolean;
+
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  declare controlledMedicine: boolean;
+
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  declare requiresConsultation: boolean;
+
+  @Default(0)
+  @Column(DataType.INTEGER)
+  declare minimumAge: number;
+
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  declare suitableForChildren: boolean;
+
+  @Column(DataType.JSON)
+  declare symptomsTreated: string[];
+
+  @Column(DataType.JSON)
+  declare commonUses: string[];
+
+  @Column(DataType.JSON)
+  declare keywords: string[];
+
+  @Default(0)
+  @Column(DataType.INTEGER)
+  declare stockLevel: number;
+
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  declare featured: boolean;
+
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  declare bestseller: boolean;
+
+  @Column(DataType.JSON)
+  declare alternativeProducts: string[];
+
+  @Column(DataType.JSON)
+  declare relatedProducts: string[];
+
+  @Column(DataType.STRING)
   declare summary: string;
 
   @Column(DataType.TEXT)
   declare description: string;
+
+  @Column(DataType.TEXT)
+  declare warning: string | null;
+
+  @Column(DataType.TEXT)
+  declare usageNotes: string | null;
 
   @Column(DataType.DECIMAL(10, 2))
   declare price: number;

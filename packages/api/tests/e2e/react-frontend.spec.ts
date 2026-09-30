@@ -14,11 +14,18 @@ test('routes legacy public pages to the React frontend', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveURL(/\/app\/$/);
   await expect(page.getByRole('heading', { name: 'Welcome to IWA Pharmacy Direct' })).toBeVisible();
+  const olivePopup = page.getByRole('link', { name: 'Ask Olive, open AI Assistant' });
+  await expect(olivePopup).toBeVisible();
+  await expect(olivePopup.locator('img')).toHaveAttribute('src', '/img/olive-avatar.png');
 
   await page.goto('/products?keywords=para');
   await expect(page).toHaveURL(/\/app\/products\?keywords=para$/);
   await expect(page.locator('.product-card')).toHaveCount(1);
   await expect(page.locator('.nav-menu')).toHaveCount(3);
+
+  await page.goto('/app/');
+  await page.getByRole('link', { name: 'Ask Olive, open AI Assistant' }).click();
+  await expect(page).toHaveURL(/\/app\/assistant$/);
 });
 
 test('adds products to the React cart and checks out through the backend', async ({ page }) => {
@@ -66,4 +73,31 @@ test('admins can access the React dashboard and management data', async ({ page 
   await page.goto('/app/admin/users');
   await expect(page.getByRole('heading', { name: 'User Management' })).toBeVisible();
   await expect(page.locator('.data-table tbody tr')).toHaveCount(5);
+});
+
+test('user and admin log pages provide searchable scroll windows', async ({ page }) => {
+  for (const { username, route } of [
+    { username: 'user1', route: '/app/user/log' },
+    { username: 'admin', route: '/app/admin/log' },
+  ]) {
+    await login(page, username, route);
+
+    const logWindow = page.locator('.log-window');
+    const search = page.getByRole('searchbox', { name: 'Search log entries' });
+    await expect(logWindow).toBeVisible();
+    await expect(logWindow).toHaveCSS('overflow-y', 'auto');
+    await expect(logWindow).toHaveCSS('height', '384px');
+    await expect.poll(async () => logWindow.evaluate(element => (
+      element.scrollTop + element.clientHeight >= element.scrollHeight - 1
+    ))).toBe(true);
+
+    await search.fill('no-such-log-entry');
+    await expect(page.getByRole('status')).toHaveText('No matching log entries.');
+    await expect(logWindow).toBeEmpty();
+
+    await search.fill(route);
+    await expect(logWindow).toContainText(route);
+
+    if (username === 'user1') await page.goto('/logout');
+  }
 });

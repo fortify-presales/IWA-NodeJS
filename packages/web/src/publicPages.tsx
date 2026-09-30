@@ -1,7 +1,7 @@
 import React, { type ComponentType, type SVGProps } from 'react';
 import {
+  ArrowRightIcon,
   BookOpenIcon,
-  ChatBubbleLeftRightIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ClipboardDocumentListIcon,
@@ -130,7 +130,7 @@ export function HomePage({ bootstrap }: { bootstrap: BootstrapData | null }) {
   return (
     <div className="page-frame home-page">
       <section className="home-hero">
-        <div>
+        <div className="home-hero-copy">
           <p className="eyebrow">Local Service, Global Reach</p>
           <h1>Welcome to {bootstrap?.appName ?? 'IWA Pharmacy Direct'}</h1>
           <p>
@@ -153,12 +153,16 @@ export function HomePage({ bootstrap }: { bootstrap: BootstrapData | null }) {
               <ClipboardDocumentListIcon className="h-5 w-5" aria-hidden="true" />
               Prescriptions
             </a>
-            <a className="button assistant-cta" href="/app/assistant">
-              <ChatBubbleLeftRightIcon className="h-5 w-5" aria-hidden="true" />
-              Ask Olive
-            </a>
           </div>
         </div>
+        <a className="olive-assistant-popup" href="/app/assistant" aria-label="Ask Olive, open AI Assistant">
+          <img src="/img/olive-avatar.png" alt="" />
+          <span className="olive-popup-copy">
+            <span>Pharmacy assistant</span>
+            <strong>Ask Olive</strong>
+          </span>
+          <ArrowRightIcon className="olive-popup-arrow" aria-hidden="true" />
+        </a>
       </section>
 
       <section className="promo-grid" aria-label="Highlights">

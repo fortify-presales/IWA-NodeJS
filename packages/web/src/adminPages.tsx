@@ -412,10 +412,32 @@ function StoredMessageText({ html }: { html: string }) {
 }
 
 function StoredLogContent({ html }: { html: string }) {
+  const [search, setSearch] = React.useState('');
+  const logWindowRef = React.useRef<HTMLPreElement>(null);
+  const query = search.trim().toLowerCase();
+  const matchingLines = query
+    ? html.split(/\r?\n/).filter(line => line.toLowerCase().includes(query))
+    : null;
+  const content = matchingLines ? matchingLines.join('\n') : html;
+
+  React.useLayoutEffect(() => {
+    const logWindow = logWindowRef.current;
+    if (logWindow) logWindow.scrollTop = logWindow.scrollHeight;
+  }, [content]);
+
   // INSECURE: admin log content rendered into DOM without escaping (CWE-79, CWE-117)
   // Purpose: demonstrates log injection and stored XSS in the modern React admin log page for Fortify SAST/DAST
   // Fix: render log content as text and encode untrusted data before display
-  return <pre className="terminal-output" dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <div className="log-viewer">
+      <label className="log-search">
+        Search log
+        <input aria-label="Search log entries" onChange={event => setSearch(event.target.value)} type="search" value={search} />
+      </label>
+      {matchingLines?.length === 0 ? <p className="log-search-empty" role="status">No matching log entries.</p> : null}
+      <pre ref={logWindowRef} className="terminal-output log-window" dangerouslySetInnerHTML={{ __html: content }} />
+    </div>
+  );
 }
 
 function AdminResultPanel({ result }: { result: AdminSummary['reactResult'] }) {

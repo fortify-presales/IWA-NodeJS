@@ -1,4 +1,4 @@
-import { Op } from 'sequelize';
+import { Op, cast, col, where } from 'sequelize';
 import { Product } from '../models/Product.js';
 import { env } from '../config/env.js';
 import { paginate } from '../utils/pagination.js';
@@ -22,6 +22,9 @@ export class ProductRepository {
           { name: { [Op.like]: `%${keywords}%` } },
           { summary: { [Op.like]: `%${keywords}%` } },
           { code: { [Op.like]: `%${keywords}%` } },
+          { category: { [Op.like]: `%${keywords}%` } },
+          where(cast(col('commonUses'), 'TEXT'), { [Op.like]: `%${keywords}%` }),
+          where(cast(col('keywords'), 'TEXT'), { [Op.like]: `%${keywords}%` }),
         ],
       },
       ...paginate(page, size),
