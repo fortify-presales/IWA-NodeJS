@@ -21,6 +21,10 @@ test-results/
 
 # Misc
 .DS_Store
+/Src/
+# Keep lowercase package source trees trackable despite broad local Src excludes.
+!packages/*/src/
+!packages/*/src/**
 *.fpr
 package.zip
 fortifypackage.zip
