@@ -170,6 +170,30 @@
       "name": "01 - Auth (JWT)",
       "item": [
         {
+          "name": "VULN: Fetch adminUsername TOTP code for next sign-in",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v3/mfa/current-code/{{adminUsername}}",
+            "description": "INSECURE: the endpoint discloses a currently-valid second-factor code (CWE-200)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('returns a six-digit code', () => pm.expect(pm.response.json().data.currentCode).to.match(/^\\d{6}$/));",
+                  "  pm.collectionVariables.set('adminMfaCode', pm.response.json().data.currentCode);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "POST sign-in (admin)",
           "request": {
             "method": "POST",
@@ -181,7 +205,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{ \"username\": \"{{adminUsername}}\", \"password\": \"{{adminPassword}}\" }"
+              "raw": "{ \"username\": \"{{adminUsername}}\", \"password\": \"{{adminPassword}}\", \"mfaCode\": \"{{adminMfaCode}}\" }"
             },
             "url": "{{baseUrl}}/api/v3/site/sign-in"
           },
@@ -203,6 +227,30 @@
           ]
         },
         {
+          "name": "VULN: Fetch userUsername TOTP code for next sign-in",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v3/mfa/current-code/{{userUsername}}",
+            "description": "INSECURE: the endpoint discloses a currently-valid second-factor code (CWE-200)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('returns a six-digit code', () => pm.expect(pm.response.json().data.currentCode).to.match(/^\\d{6}$/));",
+                  "  pm.collectionVariables.set('userMfaCode', pm.response.json().data.currentCode);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "POST sign-in (user1)",
           "request": {
             "method": "POST",
@@ -214,7 +262,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{ \"username\": \"{{userUsername}}\", \"password\": \"{{userPassword}}\" }"
+              "raw": "{ \"username\": \"{{userUsername}}\", \"password\": \"{{userPassword}}\", \"mfaCode\": \"{{userMfaCode}}\" }"
             },
             "url": "{{baseUrl}}/api/v3/site/sign-in"
           },
@@ -267,6 +315,30 @@
           ]
         },
         {
+          "name": "VULN: Fetch adminUsername TOTP code for next sign-in",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v3/mfa/current-code/{{adminUsername}}",
+            "description": "INSECURE: the endpoint discloses a currently-valid second-factor code (CWE-200)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('returns a six-digit code', () => pm.expect(pm.response.json().data.currentCode).to.match(/^\\d{6}$/));",
+                  "  pm.collectionVariables.set('adminMfaCode', pm.response.json().data.currentCode);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "VULN: Open Redirect via sign-in (CWE-601)",
           "protocolProfileBehavior": {
             "followRedirects": false
@@ -281,7 +353,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{ \"username\": \"{{adminUsername}}\", \"password\": \"{{adminPassword}}\", \"redirect\": \"http://evil.example.com\" }"
+              "raw": "{ \"username\": \"{{adminUsername}}\", \"password\": \"{{adminPassword}}\", \"redirect\": \"http://evil.example.com\", \"mfaCode\": \"{{adminMfaCode}}\" }"
             },
             "url": "{{baseUrl}}/api/v3/site/sign-in",
             "description": "INSECURE: honors an unvalidated redirect param after successful auth (CWE-601)."
@@ -2048,6 +2120,796 @@
       ]
     },
     {
+      "name": "12 - MFA (intentionally insecure)",
+      "item": [
+        {
+          "name": "VULN: GET mfa status — unauthenticated secret disclosure (CWE-200, CWE-522)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v3/mfa/status/{{userUsername}}",
+            "description": "INSECURE: returns the plaintext TOTP secret, otpauth URL and QR for any account with no authentication."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  const data = pm.response.json().data;",
+                  "  pm.test('leaks the TOTP secret', () => pm.expect(data.secret).to.be.a('string').and.not.empty);",
+                  "  pm.collectionVariables.set('mfaSecret', data.secret);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VULN: GET mfa current-code — live second factor (CWE-200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v3/mfa/current-code/{{userUsername}}",
+            "description": "INSECURE: hands out the TOTP code the server currently expects."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('returns a usable code', () => pm.expect(pm.response.json().data.currentCode).to.match(/^\\d{6}$/));",
+                  "  pm.collectionVariables.set('userMfaCode', pm.response.json().data.currentCode);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VULN: GET mfa qrcode — unauthenticated enrolment QR (CWE-306, CWE-200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v3/mfa/qrcode/{{userUsername}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('is a PNG', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('image/png'));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VULN: POST mfa verify — unlimited attempts (CWE-307)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{userUsername}}\", \"code\": \"000000\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/mfa/verify",
+            "description": "INSECURE: no rate limiting or lockout, so the 6-digit keyspace can be enumerated."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200 (attempt always evaluated)', () => pm.response.to.have.status(200));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VULN: POST mfa verify with the leaked code (CWE-200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{userUsername}}\", \"code\": \"{{userMfaCode}}\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/mfa/verify"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('leaked code is accepted', () => pm.expect(pm.response.json().data.valid).to.be.true);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VULN: POST mfa disable — unauthenticated MFA reset (CWE-640, CWE-306)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{userUsername}}\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/mfa/disable",
+            "description": "INSECURE: removes the second factor given only a username, with no authentication."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('MFA removed', () => pm.expect(pm.response.json().data.mfaType).to.eql('MFA_NONE'));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST sign-in after reset — no MFA required",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"username\": \"{{userUsername}}\", \"password\": \"{{userPassword}}\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/site/sign-in"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200 (single step)', () => pm.response.to.have.status(200));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VULN: POST mfa enrol — unauthenticated re-enrolment (CWE-306, CWE-522)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{userUsername}}\", \"type\": \"MFA_APP\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/mfa/enrol",
+            "description": "INSECURE: enrols any account without authentication and returns the plaintext secret."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('returns the plaintext secret', () => pm.expect(pm.response.json().data.secret).to.be.a('string').and.not.empty);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VULN: POST sign-in without mfaCode — 202 leaks the challenge (CWE-200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"username\": \"{{userUsername}}\", \"password\": \"{{userPassword}}\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/site/sign-in"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 202', () => pm.response.to.have.status(202));",
+                  "  const data = pm.response.json().data;",
+                  "  pm.test('challenge leaks the secret and current code', () => {",
+                  "    pm.expect(data.secret).to.be.a('string').and.not.empty;",
+                  "    pm.expect(data.currentCode).to.match(/^\\d{6}$/);",
+                  "  });",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VULN: GET login-mfa hint — unauthenticated (CWE-200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/login-mfa/hint?userId={{userUsername}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VULN: GET user totp-secret for another account — IDOR (CWE-639)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/user/security/totp-secret?userId={{adminUsername}}",
+            "description": "INSECURE: signed in as user1, returns the admin account's TOTP secret. Requires the session cookie from folder 09."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('returns another account', () => pm.expect(pm.response.json().data.username).to.eql(pm.variables.get('adminUsername')));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST mfa enrol — Email OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{userUsername}}\", \"type\": \"MFA_EMAIL\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/mfa/enrol"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('email factor selected', () => pm.expect(pm.response.json().data.mfaType).to.eql('MFA_EMAIL'));",
+                  "  pm.collectionVariables.set('emailMfaOtp', pm.response.json().data.otp);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST mfa confirm — Email OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{userUsername}}\", \"code\": \"{{emailMfaOtp}}\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/mfa/confirm"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('email OTP accepted', () => pm.expect(pm.response.json().data.valid).to.be.true);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST mfa enrol — SMS OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{userUsername}}\", \"type\": \"MFA_SMS\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/mfa/enrol"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('SMS factor selected', () => pm.expect(pm.response.json().data.mfaType).to.eql('MFA_SMS'));",
+                  "  pm.collectionVariables.set('smsMfaOtp', pm.response.json().data.otp);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST mfa confirm — SMS OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{userUsername}}\", \"code\": \"{{smsMfaOtp}}\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/mfa/confirm"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('SMS OTP accepted', () => pm.expect(pm.response.json().data.valid).to.be.true);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST mfa enrol — TOTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{userUsername}}\", \"type\": \"MFA_APP\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/mfa/enrol"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('returns QR and secret', () => {",
+                  "    pm.expect(pm.response.json().data.secret).to.be.a('string').and.not.empty;",
+                  "    pm.expect(pm.response.json().data.qrCode).to.include('data:image/png;base64,');",
+                  "  });",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VULN: Refresh user1 TOTP before confirmation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v3/mfa/current-code/{{userUsername}}",
+            "description": "INSECURE: the endpoint discloses a currently-valid second-factor code (CWE-200)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('returns a six-digit code', () => pm.expect(pm.response.json().data.currentCode).to.match(/^\\d{6}$/));",
+                  "  pm.collectionVariables.set('userMfaCode', pm.response.json().data.currentCode);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST mfa confirm — TOTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{userUsername}}\", \"code\": \"{{userMfaCode}}\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/mfa/confirm"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('TOTP confirmation accepted', () => pm.expect(pm.response.json().data.valid).to.be.true);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST web security enable-mfa — TOTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"type\": \"MFA_APP\", \"appReturnTo\": \"/app/user/security\" }"
+            },
+            "url": "{{baseUrl}}/user/security/enable-mfa",
+            "description": "Uses the session cookie established by folder 09. The session remains authenticated before MFA verification (intentional CWE-287)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('redirects after web enrolment', () => pm.response.to.have.status(302));",
+                  "})();"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "GET web account summary — enrolment result",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v3/account/summary"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('session summary includes MFA result', () => pm.expect(pm.response.json().data.reactResult.kind).to.eql('mfa'));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VULN: Refresh user1 TOTP before web confirmation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v3/mfa/current-code/{{userUsername}}",
+            "description": "INSECURE: the endpoint discloses a currently-valid second-factor code (CWE-200)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('returns a six-digit code', () => pm.expect(pm.response.json().data.currentCode).to.match(/^\\d{6}$/));",
+                  "  pm.collectionVariables.set('userMfaCode', pm.response.json().data.currentCode);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST web security confirm-mfa — TOTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"code\": \"{{userMfaCode}}\", \"appReturnTo\": \"/app/user/security\" }"
+            },
+            "url": "{{baseUrl}}/user/security/confirm-mfa"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('redirects after web confirmation', () => pm.response.to.have.status(302));",
+                  "})();"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "POST web security regenerate-totp — IDOR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{adminUsername}}\", \"appReturnTo\": \"/app/user/profile\" }"
+            },
+            "url": "{{baseUrl}}/user/security/regenerate-totp",
+            "description": "INSECURE: a logged-in user can rotate another account’s TOTP secret via userId (CWE-639)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('redirects after secret rotation', () => pm.response.to.have.status(302));",
+                  "})();"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "POST web security disable-mfa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"appReturnTo\": \"/app/user/security\" }"
+            },
+            "url": "{{baseUrl}}/user/security/disable-mfa"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('redirects after disable', () => pm.response.to.have.status(302));",
+                  "})();"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "POST login-mfa reset — unauthenticated recovery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"username\": \"{{userUsername}}\" }"
+            },
+            "url": "{{baseUrl}}/login-mfa/reset",
+            "description": "INSECURE: disables MFA for the named user without authentication (CWE-640)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('redirects after MFA reset', () => pm.response.to.have.status(302));",
+                  "})();"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          }
+        },
+        {
+          "name": "VULN: GET web TOTP secret — cross-account IDOR",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/user/security/totp-secret?userId={{adminUsername}}",
+            "description": "Requires session cookie from folder 09; INSECURE: exposes another account’s MFA details (CWE-639)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('response identifies admin', () => pm.expect(pm.response.json().data.username).to.eql(pm.variables.get('adminUsername')));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST mfa enrol — restore user1 demo TOTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userId\": \"{{userUsername}}\", \"type\": \"MFA_APP\" }"
+            },
+            "url": "{{baseUrl}}/api/v3/mfa/enrol",
+            "description": "Restores the seeded demo user after the intentional disable/reset demonstrations."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('user1 restored to TOTP', () => pm.expect(pm.response.json().data.mfaType).to.eql('MFA_APP'));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "99 - Cleanup",
       "item": [
         {
@@ -2094,6 +2956,26 @@
     },
     {
       "key": "newOrderId",
+      "value": ""
+    },
+    {
+      "key": "adminMfaCode",
+      "value": ""
+    },
+    {
+      "key": "userMfaCode",
+      "value": ""
+    },
+    {
+      "key": "mfaSecret",
+      "value": ""
+    },
+    {
+      "key": "emailMfaOtp",
+      "value": ""
+    },
+    {
+      "key": "smsMfaOtp",
       "value": ""
     }
   ]

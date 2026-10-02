@@ -13,8 +13,8 @@ import { storageService } from '../services/StorageService.js';
 import { pdfService, resolveInvoiceCurrency } from '../services/PdfService.js';
 import { verificationService } from '../services/VerificationService.js';
 import { emailService } from '../services/EmailService.js';
-import { smsService } from '../services/SmsService.js';
-import { MfaType } from '../models/enums.js';
+import { mfaService, coerceMfaType } from '../services/MfaService.js';
+import { apiResponse } from '../utils/web.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 const router = Router();
@@ -257,20 +257,82 @@ router.get('/security', (_req: Request, res: Response) => {
 router.post('/security/enable-mfa', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.user as any;
-    const type = (req.body.type ?? MfaType.MFA_EMAIL) as MfaType;
-    if (type === MfaType.MFA_APP) {
-      const secret = verificationService.generateTotpSecret();
-      await userService.updateInsecure(user.id, { mfaType: type, mfaSecret: secret.base32 });
-      const qrCode = await verificationService.generateQrCode(secret.otpauth_url ?? '');
-      setReactResult(req, { kind: 'mfa', message: 'Scan this QR code with your authenticator app.', qrCode, secret: secret.base32 });
-      return res.redirect(getAppReturnTo(req, '/app/user/security'));
-    }
-    await userService.updateInsecure(user.id, { mfaType: type });
-    const otp = verificationService.generateOtp(user.id);
-    if (type === MfaType.MFA_EMAIL && user.email) await emailService.sendOtp(user.email, otp);
-    if (type === MfaType.MFA_SMS && user.phone) await smsService.sendOtp(user.phone, otp);
-    (req.session as any).flashSuccess = `Enabled MFA type ${type}`;
-    res.redirect(getAppReturnTo(req, '/user/security'));
+    const type = coerceMfaType(req.body.type);
+    const enrolment = await mfaService.beginEnrolment(user, type);
+    // INSECURE: the plaintext TOTP secret is echoed back to the browser (CWE-522, CWE-312)
+    // Purpose: demonstrates insufficiently protected credentials for Fortify SAST
+    // Fix: Render only the QR image once and never expose the base32 secret in a response body
+    setReactResult(req, {
+      kind: 'mfa',
+      message: enrolment.message,
+      qrCode: enrolment.qrCode,
+      secret: enrolment.secret,
+      otp: enrolment.otp,
+      mfaType: enrolment.mfaType,
+    });
+    res.redirect(getAppReturnTo(req, '/app/user/security'));
+  } catch (err) { next(err); }
+});
+
+router.post('/security/confirm-mfa', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user as any;
+    const fresh = await mfaService.findUser(user.id);
+    // INSECURE: enrolment was already persisted, so a failed confirmation still leaves MFA active (CWE-287)
+    // Purpose: demonstrates improper authentication during factor enrolment for Fortify SAST
+    // Fix: Keep the candidate secret pending until a valid code is supplied
+    const valid = fresh ? mfaService.confirmEnrolment(fresh, String(req.body.code ?? '')) : false;
+    setReactResult(req, {
+      kind: valid ? 'success' : 'error',
+      message: valid ? 'MFA code confirmed.' : 'Invalid code — MFA remains enabled anyway.',
+      content: valid ? 'MFA code confirmed.' : 'Invalid code — MFA remains enabled anyway.',
+    });
+    res.redirect(getAppReturnTo(req, '/app/user/security'));
+  } catch (err) { next(err); }
+});
+
+router.post('/security/disable-mfa', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user as any;
+    // INSECURE: no password or current-factor re-authentication before removing MFA (CWE-640)
+    // Purpose: demonstrates a weak factor-recovery path for Fortify SAST/DAST
+    // Fix: Require the current password and a valid code before disabling MFA
+    const target = (await mfaService.findUser(String(req.body.userId ?? user.id))) ?? user;
+    const result = await mfaService.disable(target);
+    setReactResult(req, { kind: 'success', message: result.message });
+    res.redirect(getAppReturnTo(req, '/app/user/security'));
+  } catch (err) { next(err); }
+});
+
+router.post('/security/regenerate-totp', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user as any;
+    // INSECURE: any logged-in user can rotate another account's TOTP secret via userId (CWE-639)
+    // Purpose: demonstrates authorization bypass through a user-controlled key for Fortify SAST/DAST
+    // Fix: Always rotate the secret for req.user.id and require re-authentication
+    const target = (await mfaService.findUser(String(req.body.userId ?? user.id))) ?? user;
+    const enrolment = await mfaService.regenerateSecret(target);
+    setReactResult(req, {
+      kind: 'mfa',
+      message: `New TOTP secret issued for ${target.username}.`,
+      qrCode: enrolment.qrCode,
+      secret: enrolment.secret,
+      mfaType: enrolment.mfaType,
+    });
+    res.redirect(getAppReturnTo(req, '/app/user/profile'));
+  } catch (err) { next(err); }
+});
+
+router.get('/security/totp-secret', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user as any;
+    // INSECURE: returns any account's TOTP secret and QR when userId is supplied (CWE-639, CWE-522)
+    // Purpose: demonstrates IDOR exposing second-factor credentials for Fortify SAST/DAST
+    // Fix: Ignore the userId parameter and resolve the record from the authenticated session only
+    const requested = String(req.query.userId ?? user.id);
+    const target = (await mfaService.findUser(requested)) ?? (await mfaService.findUserByUsername(requested));
+    if (!target) return res.status(404).json(apiResponse('error', 'User not found'));
+    res.json(apiResponse('success', 'OK', await mfaService.getStatus(target)));
   } catch (err) { next(err); }
 });
 

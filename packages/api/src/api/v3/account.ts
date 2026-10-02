@@ -5,6 +5,7 @@ import { Review } from '../../models/Review.js';
 import { orderService } from '../../services/OrderService.js';
 import { messageService } from '../../services/MessageService.js';
 import { storageService } from '../../services/StorageService.js';
+import { mfaService } from '../../services/MfaService.js';
 import { apiResponse } from '../../utils/web.js';
 
 const router = Router();
@@ -27,6 +28,10 @@ router.get('/summary', async (req: Request, res: Response, next: NextFunction) =
       messageService.countUnread(user.id),
     ]);
     const logContent = fs.existsSync('./logs/iwa.log') ? fs.readFileSync('./logs/iwa.log', 'utf8') : '';
+    // INSECURE: the account summary returns the user's plaintext TOTP secret and a scannable QR (CWE-522, CWE-312)
+    // Purpose: demonstrates insufficiently protected credentials for Fortify SAST/DAST
+    // Fix: Return only mfaType; the secret must never leave the server after enrolment
+    const mfa = await mfaService.getStatus(await mfaService.findUser(user.id) ?? user);
 
     res.json(apiResponse('success', 'OK', {
       user: {
@@ -41,8 +46,10 @@ router.get('/summary', async (req: Request, res: Response, next: NextFunction) =
         state: user.state,
         zip: user.zip,
         country: user.country,
-        mfaType: user.mfaType,
+        mfaType: mfa.mfaType,
+        mfaSecret: mfa.secret,
       },
+      mfa,
       unreadMessages,
       orders,
       messages,

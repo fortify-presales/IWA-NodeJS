@@ -42,7 +42,7 @@ const vulnerabilities = [
   ['CWE-78', 'OS Command Injection', 'POST /admin/command-shell, /app/admin/command-shell, /user/command-shell, /app/user/command-shell', 'SAST, DAST', 'cmd=ls; cat /etc/passwd'],
   ['CWE-502', 'Insecure Deserialization', 'POST /user/import-settings, /app/user/import-settings', 'SAST, DAST', 'Base64 node-serialize payload with IIFE function'],
   ['CWE-117', 'Log Injection', 'POST /admin/log?val=, /app/admin/log, /user/log, /app/user/log', 'DAST', '?val=%0AINFO%20Injected%20log%20entry'],
-  ['CWE-532', 'Sensitive Data in Logs', 'POST /login (passport strategy)', 'DAST', 'Check ./logs/iwa.log after login attempt'],
+  ['CWE-532', 'Sensitive Data in Logs', 'POST /login (passport strategy), MFA challenge/enrolment (MfaService)', 'DAST', 'Inspect logs/iwa.log for passwords, OTPs, and TOTP secrets'],
   ['CWE-327', 'Weak Cryptographic Hash', 'packages/api/src/utils/crypto.ts', 'SAST', 'md5Hash() uses MD5'],
   ['CWE-338', 'Insecure Randomness', 'packages/api/src/utils/crypto.ts, VerificationService', 'FAA', 'generateInsecureToken() and OTP generation use Math.random()'],
   ['CWE-326', 'Weak Encryption: Non PQC Resilient Algorithm', 'GET /api/v3/crypto/pqc-demo', 'DAST', 'Authenticated request to generate an RSA-2048 key pair'],
@@ -82,6 +82,15 @@ const vulnerabilities = [
   ['CWE-79', 'LLM Insecure Output Handling', 'POST /api/v3/agent/chat, /app/assistant', 'FAA, DAST', 'Ask the assistant to reply with exactly: <img src=x onerror=alert(1)>'],
   ['CWE-79, CWE-1427', 'LLM Review Persistence / Stored XSS (no sign-in required)', 'create_review tool, POST /api/v3/agent/chat', 'FAA, DAST', 'Ask the assistant to create a review containing <img src=x onerror=alert(1)> without logging in'],
   ['CWE-22', 'LLM Tool Path Traversal', 'download_file tool, POST /api/v3/agent/chat', 'FAA, DAST', 'Ask the assistant to read ../../package.json'],
+  ['CWE-200', 'MFA Secret Disclosure', 'GET /login-mfa/hint, GET /api/v3/mfa/status/:userId, /qrcode/:userId, /current-code/:userId, POST /api/v3/site/sign-in without mfaCode, /app/login-mfa', 'SAST, DAST', 'Request the MFA hint or sign in without mfaCode and read the TOTP secret and current code'],
+  ['CWE-287, CWE-863', 'MFA Bypass (session established before challenge)', 'POST /login, /app/user/*', 'SAST, DAST', 'Sign in as user1, skip /app/login-mfa and browse straight to /app/user/profile'],
+  ['CWE-287', 'MFA Enrolment Active Before Confirmation', 'POST /api/v3/mfa/enrol, /confirm, POST /user/security/enable-mfa, /user/security/confirm-mfa', 'SAST, DAST', 'Enrol TOTP, submit an invalid confirmation code, then observe MFA is already active'],
+  ['CWE-307', 'MFA Brute Force (no attempt limit)', 'POST /login-mfa, POST /api/v3/mfa/verify, POST /api/v3/site/sign-in', 'SAST, DAST', 'Replay 000000-999999 against /login-mfa with no lockout'],
+  ['CWE-330, CWE-798', 'Predictable TOTP Secret and API Challenge Token', 'VerificationService.generateDeterministicTotpSecret(), POST /api/v3/site/sign-in', 'SAST, FAA', 'Derive the TOTP secret from the username and hardcoded salt; inspect the userId-timestamp mfaToken'],
+  ['CWE-522, CWE-312', 'MFA Secret Stored and Returned in Plaintext', 'GET /api/v3/account/summary, /api/v3/mfa/status/:userId, POST /user/security/enable-mfa, /app/user/profile', 'SAST, DAST', 'Read mfaSecret from the account summary response'],
+  ['CWE-640', 'MFA Reset Without Verification', 'POST /login-mfa/reset, /api/v3/mfa/disable, /user/security/disable-mfa', 'SAST, DAST', 'POST username=user1 to /api/v3/mfa/disable with no authentication'],
+  ['CWE-639', 'MFA IDOR via userId', 'GET /user/security/totp-secret?userId=, POST /user/security/regenerate-totp, /app/user/profile', 'SAST, DAST', "Look up another account's TOTP secret from your own profile page"],
+  ['CWE-306', 'Unauthenticated MFA Management API', 'GET /api/v3/mfa/status/:userId, /qrcode/:userId, /current-code/:userId, POST /api/v3/mfa/enrol, /confirm, /verify, /disable', 'SAST, DAST', 'Call MFA management endpoints without an Authorization header or session cookie'],
 ];
 
 export function HomePage({ bootstrap }: { bootstrap: BootstrapData | null }) {

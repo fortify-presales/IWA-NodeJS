@@ -1,13 +1,24 @@
 import { expect, test } from '@playwright/test';
+import speakeasy from 'speakeasy';
+import { verificationService } from '../../src/services/VerificationService.js';
 
 async function login(page: Parameters<typeof test>[0] extends never ? never : any, username: string, redirect: string) {
   await page.goto(`/app/login?redirect=${encodeURIComponent(redirect)}`);
   await page.locator('input[name="username"]').fill(username);
   await page.locator('input[name="password"]').fill('Password123!');
   await Promise.all([
-    page.waitForURL(`**${redirect}`),
+    page.waitForURL(/\/app\/(login-mfa|.*)/),
     page.locator('#login-submit').click(),
   ]);
+  if (page.url().includes('/app/login-mfa')) {
+    const secret = verificationService.generateDeterministicTotpSecret(username);
+    await page.locator('input[name="code"]').fill(speakeasy.totp({ secret, encoding: 'base32' }));
+    await Promise.all([
+      page.waitForURL(`**${redirect}`),
+      page.getByRole('button', { name: 'Verify' }).click(),
+    ]);
+  }
+  await page.waitForURL(`**${redirect}`);
 }
 
 test('routes legacy public pages to the React frontend', async ({ page }) => {
