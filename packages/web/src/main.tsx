@@ -96,7 +96,7 @@ function AppRoute({
     return <AssistantPage signedIn={Boolean(bootstrap?.user)} bootstrapLoaded={bootstrapLoaded} />;
   }
 
-  return <Preview bootstrap={bootstrap ?? null} />;
+  return <NotFoundPage />;
 }
 
 function ModernShell({
@@ -118,26 +118,16 @@ function ModernShell({
   );
 }
 
-function Preview({ bootstrap }: { bootstrap: BootstrapResponse['data'] | null }) {
+function NotFoundPage() {
   return (
-    <section className="app-panel page-frame">
-      <p className="eyebrow">Modern frontend preview</p>
-      <h1>{bootstrap?.appName ?? 'IWA Pharmacy Direct'}</h1>
-      <p>This React and TypeScript shell is served from Express and now includes migrated public routes.</p>
-      <dl className="facts">
-        <div>
-          <dt>Version</dt>
-          <dd>{bootstrap?.appVersion ?? 'Loading'}</dd>
-        </div>
-        <div>
-          <dt>Currency</dt>
-          <dd>{bootstrap?.currency ?? 'Loading'}</dd>
-        </div>
-        <div>
-          <dt>Session</dt>
-          <dd>{bootstrap?.user ? bootstrap.user.username : 'Anonymous'}</dd>
-        </div>
-      </dl>
+    <section className="page-frame content-page">
+      <p className="page-kicker">Page not found</p>
+      <h1>We couldn't find that page</h1>
+      <p>That address doesn't match a page in IWA Pharmacy Direct.</p>
+      <div className="action-row">
+        <a className="button" href="/app/">Go to home</a>
+        <a className="button secondary outline" href="/app/login">Sign in</a>
+      </div>
     </section>
   );
 }
