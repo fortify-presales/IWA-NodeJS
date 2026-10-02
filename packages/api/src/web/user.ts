@@ -102,6 +102,9 @@ router.get('/edit-profile', (req: Request, res: Response) => {
 router.post('/edit-profile', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.user as any;
+    // INSECURE: profile edits forward attacker-controlled MFA fields to a permissive allowlist (CWE-915)
+    // Purpose: demonstrates overwriting a user's MFA secret through profile editing
+    // Fix: Map only profile fields and never accept mfaType or mfaSecret from this form
     await userService.update(user.id, req.body);
     (req.session as any).flashSuccess = 'Profile updated';
     res.redirect(getAppReturnTo(req, '/user/profile'));

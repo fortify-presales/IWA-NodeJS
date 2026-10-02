@@ -82,7 +82,7 @@ and entering a valid authenticator code completes the login.
 - **SC-001**: `npm run build` succeeds for the workspace.
 - **SC-002**: `npm run test:vulns -w packages/api` passes, including the new `mfa.test.ts`.
 - **SC-003**: A browser login as `user1` completes through the TOTP challenge using the displayed code.
-- **SC-004**: Each of the seven catalog entries can be reproduced with the documented `DEMO.md` payload.
+- **SC-004**: Each of the six grouped MFA catalog scenarios can be reproduced with the detailed `DEMO.md` payloads.
 
 ## Affected Packages
 

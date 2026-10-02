@@ -63,6 +63,8 @@ router.post('/login', (req: Request, res: Response, next: NextFunction) => {
         // Fix: Keep the user logged out until /login-mfa succeeds, and gate every route on an "mfaSatisfied" flag
         const challenge = await mfaService.challenge(user);
         // INSECURE: logs the MFA secret and one-time code (CWE-532)
+        // Purpose: demonstrates sensitive authentication data in logs for Fortify SAST
+        // Fix: Never log MFA secrets or one-time codes
         logger.debug(`MFA challenge for ${user.username}: type=${user.mfaType}, otp=${challenge.otp ?? 'n/a'}, mfaSecret: ${user.mfaSecret}`);
 
         return res.redirect(appLoginPath(req.body.redirect, '/login-mfa'));

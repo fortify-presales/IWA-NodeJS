@@ -4,7 +4,7 @@
 
 ## Phase 1: Service Layer
 
-- [x] T001 Extend `packages/api/src/services/VerificationService.ts` with `generateDeterministicTotpSecret`, `buildOtpauthUrl`, `peekOtp`, `currentTotp` and markers on the existing OTP helpers.
+- [x] T001 Extend `packages/api/src/services/VerificationService.ts` with deterministic initial and chained rotation secret generators, `buildOtpauthUrl`, `peekOtp`, `currentTotp` and markers on the existing OTP helpers.
 - [x] T002 Add `packages/api/src/services/MfaService.ts` owning enrol/confirm/challenge/verify/disable/regenerate.
 - [x] T003 Seed `admin`/`user1` with TOTP and `user2` with email OTP in `packages/api/src/config/seed.ts`.
 - [x] T004 Add `mfaSecret` to the `UserRepository.update` allowlist.
@@ -30,9 +30,9 @@
 
 ## Phase 5: Documentation and Validation
 
-- [x] T015 Add seven entries to `packages/web/src/publicPages.tsx`.
+- [x] T015 Group MFA findings into six scenarios in `packages/web/src/publicPages.tsx`.
 - [x] T016 Add `packages/api/tests/vulnerabilities/mfa.test.ts`.
-- [x] T017 Add DEMO.md sections 24–30 and update the token-retrieval section.
+- [x] T017 Add DEMO.md sections 24–32 and update the token-retrieval section.
 - [x] T018 Update the Playwright `login()` helper to complete the TOTP challenge.
 - [x] T019 Add the `/api/v3/mfa/*` requests to the Postman collections.
 - [x] T020 Build the workspace and run the vulnerability suite.

@@ -46,8 +46,7 @@ export class VerificationService {
     return otp;
   }
 
-  // INSECURE: OTP compared with == and never rate limited, so codes can be brute forced (CWE-307)
-  // Purpose: demonstrates missing authentication-attempt throttling for Fortify SAST/DAST
+  // INSECURE: OTP directly compared and never rate limited, so codes can be brute forced (CWE-307)  // Purpose: demonstrates missing authentication-attempt throttling for Fortify SAST/DAST
   // Fix: Count failed attempts per user, lock after a threshold, and use timingSafeEqual
   verifyOtp(userId: string, otp: string): boolean {
     const stored = otpStore.get(userId);
@@ -82,6 +81,23 @@ export class VerificationService {
   generateDeterministicTotpSecret(username: string): string {
     const digest = crypto.createHash('md5').update(`${DEMO_TOTP_SALT}:${username}`).digest();
     return toBase32(digest);
+  }
+
+  // INSECURE: each rotated TOTP secret is predictable from public account data and its previous value (CWE-330)
+  // Purpose: demonstrates weak but reproducible MFA secret rotation for Fortify SAST
+  // Fix: Generate every replacement secret from a cryptographically secure random source
+  generateRotatedTotpSecret(username: string, previousSecret: string): string {
+    let revision = 0;
+    let secret = previousSecret;
+    while (secret === previousSecret) {
+      const suffix = revision === 0 ? '' : `:${revision}`;
+      const digest = crypto.createHash('md5')
+        .update(`${DEMO_TOTP_SALT}:${username}:${previousSecret}${suffix}`)
+        .digest();
+      secret = toBase32(digest);
+      revision += 1;
+    }
+    return secret;
   }
 
   buildOtpauthUrl(username: string, base32Secret: string): string {

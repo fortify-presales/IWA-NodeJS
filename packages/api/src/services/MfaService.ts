@@ -39,7 +39,8 @@ export class MfaService {
   // Purpose: demonstrates insufficiently protected credentials for Fortify SAST/DAST
   // Fix: Never return the shared secret after enrolment; store it encrypted at rest
   async getStatus(user: User) {
-    const secret = user.mfaSecret ?? '';
+    const isTotp = (user.mfaType ?? MfaType.MFA_NONE) === MfaType.MFA_APP;
+    const secret = isTotp ? user.mfaSecret ?? '' : '';
     const otpauthUrl = secret ? verificationService.buildOtpauthUrl(user.username, secret) : '';
     return {
       userId: user.id,
@@ -78,8 +79,11 @@ export class MfaService {
       };
     }
 
-    await userService.updateInsecure(user.id, { mfaType: type });
+    await userService.updateInsecure(user.id, { mfaType: type, mfaSecret: null });
     const otp = verificationService.generateOtp(user.id);
+    // INSECURE: writes the generated email/SMS OTP to the application log (CWE-532)
+    // Purpose: demonstrates sensitive authentication data in logs for Fortify SAST
+    // Fix: Never log one-time codes
     logger.info(`[MfaService] ${type} OTP for ${user.username}: ${otp}`);
     if (type === MfaType.MFA_EMAIL && user.email) await emailService.sendOtp(user.email, otp);
     if (type === MfaType.MFA_SMS && user.phone) await smsService.sendOtp(user.phone, otp);
@@ -104,7 +108,16 @@ export class MfaService {
   }
 
   async regenerateSecret(user: User): Promise<MfaEnrolment> {
-    return this.beginEnrolment(user, MfaType.MFA_APP);
+    const secret = verificationService.generateRotatedTotpSecret(user.username, user.mfaSecret ?? '');
+    await userService.updateInsecure(user.id, { mfaType: MfaType.MFA_APP, mfaSecret: secret });
+    const otpauthUrl = verificationService.buildOtpauthUrl(user.username, secret);
+    return {
+      mfaType: MfaType.MFA_APP,
+      secret,
+      otpauthUrl,
+      qrCode: await verificationService.generateQrCode(otpauthUrl),
+      message: 'A new TOTP secret was generated. Scan the QR code and update your authenticator app.',
+    };
   }
 
   async challenge(user: User): Promise<MfaEnrolment> {

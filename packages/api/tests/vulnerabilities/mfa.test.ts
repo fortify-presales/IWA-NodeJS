@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { verificationService } from '../../src/services/VerificationService.js';
 
 const read = (relative: string) => fs.readFileSync(path.resolve(__dirname, relative), 'utf8');
 
@@ -37,6 +38,12 @@ describe('MFA secret disclosure - CWE-200', () => {
     const source = read('../../../web/src/authPages.tsx');
     expect(source).toContain("fetch('/login-mfa/hint'");
     expect(source).toContain('INSECURE: the challenge screen pulls the pending account\'s TOTP secret and live code (CWE-200)');
+  });
+
+  it('VULNERABLE: the reveal component renders MFA secrets into the browser', () => {
+    const source = read('../../../web/src/components/MfaReveal.tsx');
+    expect(source).toContain('INSECURE: renders MFA secrets and one-time codes in the client after user interaction (CWE-200, CWE-522)');
+    expect(source).toContain('<code className="reveal-value">{value}</code>');
   });
 });
 
@@ -94,6 +101,32 @@ describe('Predictable TOTP secret - CWE-330 / CWE-798', () => {
   it('VULNERABLE: seeded demo accounts use the derivable secret', () => {
     const source = read('../../src/config/seed.ts');
     expect(source).toContain("mfaType: MfaType.MFA_APP, mfaSecret: demoTotpSecret('user1')");
+  });
+
+  it('VULNERABLE: each rotation changes the secret but remains predictable', () => {
+    const initialSecret = verificationService.generateDeterministicTotpSecret('user1');
+    const rotatedSecret = verificationService.generateRotatedTotpSecret('user1', initialSecret);
+    const nextRotatedSecret = verificationService.generateRotatedTotpSecret('user1', rotatedSecret);
+    const source = read('../../src/services/MfaService.ts');
+
+    expect(rotatedSecret).not.toBe(initialSecret);
+    expect(nextRotatedSecret).not.toBe(rotatedSecret);
+    expect(rotatedSecret).toBe(verificationService.generateRotatedTotpSecret('user1', initialSecret));
+    expect(source).toContain('verificationService.generateRotatedTotpSecret(user.username, user.mfaSecret ?? \'\')');
+    expect(source).toContain('await userService.updateInsecure(user.id, { mfaType: MfaType.MFA_APP, mfaSecret: secret });');
+  });
+});
+
+describe('Switching away from TOTP clears its secret', () => {
+  it('clears mfaSecret when enabling Email or SMS', () => {
+    const source = read('../../src/services/MfaService.ts');
+    expect(source).toContain('await userService.updateInsecure(user.id, { mfaType: type, mfaSecret: null });');
+  });
+
+  it('does not expose a stale TOTP secret for non-TOTP factors', () => {
+    const source = read('../../src/services/MfaService.ts');
+    expect(source).toContain("const isTotp = (user.mfaType ?? MfaType.MFA_NONE) === MfaType.MFA_APP;");
+    expect(source).toContain("const secret = isTotp ? user.mfaSecret ?? '' : '';");
   });
 });
 
@@ -160,5 +193,16 @@ describe('MFA IDOR - CWE-639', () => {
     const source = read('../../../web/src/accountPages.tsx');
     expect(source).toContain('/user/security/totp-secret?userId=');
     expect(source).toContain('INSECURE: user-supplied id selects whose TOTP secret is returned (CWE-639)');
+  });
+});
+
+describe('MFA secret mass assignment - CWE-915', () => {
+  it('VULNERABLE: profile editing accepts mfaSecret from the request body', () => {
+    const route = read('../../src/web/user.ts');
+    const repository = read('../../src/repositories/UserRepository.ts');
+    expect(route).toContain("router.post('/edit-profile'");
+    expect(route).toContain('INSECURE: profile edits forward attacker-controlled MFA fields to a permissive allowlist (CWE-915)');
+    expect(route).toContain('await userService.update(user.id, req.body);');
+    expect(repository).toContain("'mfaType', 'mfaSecret'");
   });
 });

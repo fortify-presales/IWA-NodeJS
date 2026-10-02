@@ -9,6 +9,9 @@ function secondsRemaining() {
 export function RevealValue({ label, value }: { label: string; value: string }) {
   const [revealed, setRevealed] = React.useState(false);
 
+  // INSECURE: renders MFA secrets and one-time codes in the client after user interaction (CWE-200, CWE-522)
+  // Purpose: demonstrates second-factor disclosure in the browser for Fortify SAST/DAST
+  // Fix: Keep factor secrets server-side and never send them to a client-rendered component
   return (
     <p className="reveal-row">
       <span className="reveal-label">{label}</span>

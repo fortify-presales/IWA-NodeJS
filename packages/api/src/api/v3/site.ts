@@ -220,6 +220,8 @@ router.post('/sign-in', (req: Request, res: Response, next: NextFunction) => {
             mfaType,
             userId: user.id,
             // INSECURE: predictable MFA challenge token built from the user id and a timestamp (CWE-330)
+            // Purpose: demonstrates predictable authentication challenge identifiers for Fortify SAST
+            // Fix: Generate an opaque, cryptographically random, short-lived challenge identifier
             mfaToken: `${user.id}-${Date.now()}`,
             secret: status.secret,
             qrCode: status.qrCode,

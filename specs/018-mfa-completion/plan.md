@@ -50,8 +50,10 @@ specs/018-mfa-completion/
 
 ## Key Decisions
 
-- **Derived secret over random**: `base32(md5("iwa-demo-totp-salt:" + username))` makes every demo
-  reproducible after a reseed and doubles as the CWE-330 demonstration.
+- **Predictable but rotating secrets**: the seeded/initial secret is
+  `base32(md5("iwa-demo-totp-salt:" + username))`; each subsequent rotation is
+  `base32(md5("iwa-demo-totp-salt:" + username + ":" + previousSecret))`. This keeps seeded demos
+  reproducible and lets the rotation endpoint change the secret while demonstrating CWE-330.
 - **`req.logout()` removed from the MFA branch**: keeping the session alive is what makes the CWE-287
   bypass reproducible; this is deliberate and asserted by a regression test.
 - **Centralised `MfaService`**: a single module keeps Fortify dataflow between the secret source and the
