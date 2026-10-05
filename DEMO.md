@@ -1439,6 +1439,72 @@ was persisted before proof of possession. The final request restores `api` to `M
 
 ---
 
+## 33. Cleartext HTTP Transport (CWE-319)
+
+**Location:** API listener in `packages/api/src/index.ts` (`app.listen`, no TLS)
+**Fortify Tooling Detection:** SAST
+
+The development server accepts plain HTTP. Sign-in credentials and bearer tokens sent this way are visible
+to an observer who can capture traffic on the network path. For a local-only demonstration, capture the
+loopback interface; to demonstrate exposure to another host, use a private lab network and replace
+`localhost` with the server's reachable IP address.
+
+### Bash
+
+```bash
+curl -v -X POST http://localhost:8888/api/v3/site/sign-in \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user1","password":"Password123!"}'
+```
+
+### PowerShell
+
+```powershell
+Invoke-WebRequest -Verbose -Method Post `
+  -Uri 'http://localhost:8888/api/v3/site/sign-in' `
+  -ContentType 'application/json' `
+  -Body (@{ username = 'user1'; password = 'Password123!' } | ConvertTo-Json)
+```
+
+**Expected:** The request is sent over HTTP, not TLS. A packet capture of the HTTP exchange shows the
+credentials in the request body. Do not expose the demo server to an untrusted network.
+
+---
+
+## Fortify SAST Scan Snapshot (2026-10-05)
+
+The FPR `iwa-nodejs-20261005151237.fpr` was created at 2026-10-05 15:29 and contains **145 FVDL issue
+records**. These are issue instances, not 145 distinct vulnerabilities: repeated traces to the same source
+and sink, configuration checks, comments, and generated scan inputs are included. The most relevant
+application findings align with existing demos:
+
+| Fortify category | Instances | Existing demo coverage |
+|---|---:|---|
+| Privacy Violation | 77 | MFA secret/code disclosure and account summary (demos 24, 28) |
+| Open Redirect | 27 | Login redirect (demo 15); multiple route traces are counted separately |
+| Path Manipulation | 5 | File traversal and archive extraction (demos 5, 14) |
+| Cross-Site Scripting | 5 | Reflected and DOM-based XSS (demos 2, 3) |
+| Weak Cryptographic Hash | 4 | MD5 use (CWE-327, catalog entry) |
+| Cross-Site Request Forgery | 3 | Scanner reports; do not interpret as three independent form vulnerabilities |
+| Command Injection | 3 | Two command-shell flows (demo 6) and one CI workflow report |
+| Insecure Transport | 2 | Plain HTTP listener (demo 33) and the HTTP branch of the existing diagnostics SSRF route |
+| Weak Encryption | 2 | RSA-2048 generation (demo 18) |
+| SQL Injection | 1 | User search API (demo 1) |
+| XML External Entity Injection | 1 | XML upload (demo 4) |
+| Dynamic Code Evaluation | 1 | Diagnostics `eval` (demo 12) |
+
+The scan also reported Header Manipulation, System Information Leak, and Dockerfile Misconfiguration.
+Treat these as scan observations rather than additional confirmed demos: Node rejects CR/LF in the
+`Content-Disposition` value on the reported download flow (`ERR_INVALID_CHAR`); the information-leak
+traces point at UI locations and need separate impact validation; and the Dockerfile dependency-confusion
+finding needs review against the build environment. Password/comment matches and findings in rule-pack or
+generated SARIF files are not separate application vulnerabilities. A credential finding also points to
+the local, untracked `.env` file; verify that value is a placeholder and rotate it if it is a real secret.
+The `.env` content is intentionally not reproduced here. No finding was reported under
+`packages/agent/src` in this FPR.
+
+---
+
 ## Fortify Skill Demo Workflows
 
 These workflows support `/fortify-change-review` and `/fortify-remediate` demonstrations without changing

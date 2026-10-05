@@ -32,7 +32,7 @@ fortifypackage.zip
 *.zip
 *.sarif
 *.json
-core_javascript.xml
-extended_javascript.xml
+core_*.xml
+extended_*.xml
 xxe.xml
 downloaded-win.ini

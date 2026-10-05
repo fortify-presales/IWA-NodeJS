@@ -48,6 +48,7 @@ const vulnerabilities = [
   ['CWE-326', 'Weak Encryption: Non PQC Resilient Algorithm', 'GET /api/v3/crypto/pqc-demo', 'DAST', 'Authenticated request to generate an RSA-2048 key pair'],
   ['CWE-352', 'CSRF Disabled', 'All state-changing web forms', 'SAST, DAST', 'Cross-origin POST has no CSRF token validation'],
   ['CWE-942', 'Permissive CORS', 'src/config/security.ts', 'DAST', 'Send request with arbitrary Origin header'],
+  ['CWE-319', 'Cleartext Transmission of Sensitive Information', 'HTTP listener in packages/api/src/index.ts', 'SAST', 'Send sign-in credentials over HTTP and inspect the request in a network capture'],
   ['CWE-601', 'Open Redirect', 'POST /login?redirect=', 'SAST, DAST', 'POST /login?redirect=http://evil.example'],
   ['CWE-798', 'Hardcoded Credentials', 'src/config/env.ts, src/web/admin/index.ts', 'SAST, DAST', 'Hardcoded JWT secret and BACKDOOR_TOKEN'],
   ['CWE-209', 'Verbose Error Handling', 'src/middleware/errorHandler.ts', 'DAST', 'Trigger error and inspect stack trace'],
