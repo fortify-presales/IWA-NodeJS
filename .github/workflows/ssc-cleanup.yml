@@ -1,0 +1,30 @@
+# Create GitHub Action Repository Variables for your version of the application:
+#   SSC_URL                     - SSC Server URL for your instance (e.g. https://ssc.example.com/ssc)
+# Create GitHub Action Secrets for your version of the application:
+#   SSC_TOKEN should be an SSC CIToken or AutomationToken with permission to delete application versions.
+# Helpful hints:
+#   Application-version names use the same <owner>/<repository>:<branch> convention as the ScanCentral workflow.
+name: Fortify SSC PR Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  SSC-PR-Cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: fortify/github-action/setup@v3
+        with:
+          fcli: latest
+      - name: Delete closed PR application version
+        run: |
+          set -euo pipefail
+          fcli ssc session login --url "$SSC_URL" --token "$SSC_TOKEN" --disable sc-sast,sc-dast--ssc-session github-actions
+          trap 'fcli ssc session logout --ssc-session github-actions || true' EXIT
+          fcli ssc appversion delete "$SSC_APPVERSION" --ssc-session github-actions
+        env:
+          SSC_URL: ${{ vars.SSC_URL }}
+          SSC_TOKEN: ${{ secrets.SSC_TOKEN }}
+          SSC_APPVERSION: "${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.event.pull_request.head.ref }}"
