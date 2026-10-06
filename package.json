@@ -31,7 +31,8 @@
     "sbom": "cyclonedx-npm --output-file etc/sbom.json",
     "docker:build": "docker build -t iwa-nodejs .",
     "docker:run": "docker run -p 8080:8080 iwa-nodejs",
-    "postman:run": "newman run postman/IWA-NodeJS.postman_collection.json -e postman/IWA-NodeJS.postman_environment.json --insecure",
+    "postman:run": "newman run postman/IWA-NodeJS.combined.postman_collection.json --insecure",
+    "postman:run:local": "newman run postman/IWA-NodeJS.postman_collection.json -e postman/IWA-NodeJS.postman_local_environment.json --insecure",
     "postman:run:combined": "newman run postman/IWA-NodeJS.combined.postman_collection.json --insecure"
   },
   "devDependencies": {

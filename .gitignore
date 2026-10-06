@@ -21,6 +21,10 @@ test-results/
 
 # Misc
 .DS_Store
+/Src/
+# Keep lowercase package source trees trackable despite broad local Src excludes.
+!packages/*/src/
+!packages/*/src/**
 *.fpr
 package.zip
 fortifypackage.zip
@@ -28,7 +32,7 @@ fortifypackage.zip
 *.zip
 *.sarif
 *.json
-core_javascript.xml
-extended_javascript.xml
+core_*.xml
+extended_*.xml
 xxe.xml
 downloaded-win.ini

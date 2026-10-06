@@ -3,8 +3,7 @@ import passport from 'passport';
 import { logger } from '../utils/logger.js';
 import { authService } from '../services/AuthService.js';
 import { verificationService } from '../services/VerificationService.js';
-import { emailService } from '../services/EmailService.js';
-import { smsService } from '../services/SmsService.js';
+import { mfaService } from '../services/MfaService.js';
 import { MfaType } from '../models/enums.js';
 
 const router = Router();
@@ -59,14 +58,15 @@ router.post('/login', (req: Request, res: Response, next: NextFunction) => {
         (req.session as any).pendingMfaType = user.mfaType;
         (req.session as any).pendingRedirect = req.body.redirect || '/user/home';
 
-        // Send OTP
-        const otp = verificationService.generateOtp(user.id);
-        // INSECURE: logs MFA secret (CWE-532)
-        logger.debug(`MFA OTP for ${user.username}: ${otp}, mfaSecret: ${user.mfaSecret}`);
-        if (user.mfaType === MfaType.MFA_EMAIL) await emailService.sendOtp(user.email, otp);
-        if (user.mfaType === MfaType.MFA_SMS) await smsService.sendOtp(user.phone, otp);
+        // INSECURE: the session stays authenticated while the second factor is still pending (CWE-287, CWE-863)
+        // Purpose: demonstrates an MFA bypass — browsing straight to /app/user/* skips the challenge entirely
+        // Fix: Keep the user logged out until /login-mfa succeeds, and gate every route on an "mfaSatisfied" flag
+        const challenge = await mfaService.challenge(user);
+        // INSECURE: logs the MFA secret and one-time code (CWE-532)
+        // Purpose: demonstrates sensitive authentication data in logs for Fortify SAST
+        // Fix: Never log MFA secrets or one-time codes
+        logger.debug(`MFA challenge for ${user.username}: type=${user.mfaType}, otp=${challenge.otp ?? 'n/a'}, mfaSecret: ${user.mfaSecret}`);
 
-        req.logout((err) => { if (err) logger.error(err); });
         return res.redirect(appLoginPath(req.body.redirect, '/login-mfa'));
       }
 
@@ -86,11 +86,52 @@ router.get('/login-mfa', (req: Request, res: Response) => {
   res.redirect('/app/login-mfa' + (error ? '?error=' + encodeURIComponent(error) : ''));
 });
 
+// GET /login-mfa/hint
+// INSECURE: hands the pending user's TOTP secret, QR code and live OTP to an unauthenticated caller (CWE-200)
+// Purpose: demonstrates sensitive information disclosure of a second factor for Fortify SAST/DAST
+// Fix: Delete this endpoint; enrolment material must only ever be shown once, to an authenticated user
+router.get('/login-mfa/hint', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const session = req.session as any;
+    const userId = String(req.query.userId ?? session.pendingMfaUserId ?? '');
+    if (!userId) return res.json({ pending: false });
+    const user = (await mfaService.findUser(userId)) ?? (await mfaService.findUserByUsername(userId));
+    if (!user) return res.json({ pending: false });
+    const status = await mfaService.getStatus(user);
+    res.json({
+      pending: true,
+      username: status.username,
+      mfaType: status.mfaType,
+      secret: status.secret,
+      otpauthUrl: status.otpauthUrl,
+      qrCode: status.qrCode,
+      currentCode: status.currentCode,
+      otp: verificationService.peekOtp(user.id),
+    });
+  } catch (err) { next(err); }
+});
+
+// POST /login-mfa/reset
+// INSECURE: "lost your device" disables MFA for any account given only a username (CWE-640)
+// Purpose: demonstrates a weak password/factor recovery mechanism for Fortify SAST/DAST
+// Fix: Require an authenticated session plus a verified recovery code or out-of-band identity proof
+router.post('/login-mfa/reset', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const username = String(req.body.username ?? '');
+    const user = await mfaService.findUserByUsername(username);
+    if (user) await mfaService.disable(user);
+    const session = req.session as any;
+    delete session.pendingMfaUserId;
+    delete session.pendingMfaType;
+    delete session.pendingRedirect;
+    res.redirect('/app/login?message=' + encodeURIComponent(`MFA reset for ${username}. Sign in again without a code.`));
+  } catch (err) { next(err); }
+});
+
 // POST /login-mfa
 router.post('/login-mfa', async (req: Request, res: Response, next: NextFunction) => {
   const session = req.session as any;
   const userId = session.pendingMfaUserId;
-  const mfaType = session.pendingMfaType;
   const redirect = session.pendingRedirect || '/user/home';
   if (!userId) return res.redirect(appLoginPath(redirect, '/login'));
 
@@ -100,13 +141,11 @@ router.post('/login-mfa', async (req: Request, res: Response, next: NextFunction
     const user = await User.findByPk(userId, { include: [{ model: Authority }] });
     if (!user) return res.redirect(appLoginPath(redirect, '/login'));
 
+    // INSECURE: unlimited MFA code attempts, no lockout and no challenge expiry (CWE-307)
+    // Purpose: demonstrates a brute-forceable second factor for Fortify DAST
+    // Fix: Count failures against the pending challenge and abandon the login after a few attempts
     const code = req.body.code as string;
-    let valid = false;
-    if (mfaType === MfaType.MFA_APP) {
-      valid = verificationService.verifyTotp(user.mfaSecret, code);
-    } else {
-      valid = verificationService.verifyOtp(userId, code);
-    }
+    const valid = mfaService.verify(user, code);
 
     if (!valid) {
       return res.redirect(appLoginPath(redirect, '/login-mfa') + '?error=' + encodeURIComponent('Invalid code'));

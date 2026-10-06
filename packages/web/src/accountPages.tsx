@@ -6,10 +6,23 @@ import {
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { getJson } from './api';
+import { RevealValue, RevealTotpCode } from './components/MfaReveal';
 import { formatMoney } from './currency';
+
+type MfaStatus = {
+  userId: string;
+  username: string;
+  mfaType: string;
+  enabled: boolean;
+  secret: string;
+  otpauthUrl: string;
+  qrCode: string;
+  currentCode: string;
+};
 
 type AccountSummary = {
   user: {
+    id: string;
     username: string;
     email: string;
     firstName: string;
@@ -19,7 +32,9 @@ type AccountSummary = {
     city?: string;
     zip?: string;
     mfaType?: string;
+    mfaSecret?: string;
   };
+  mfa: MfaStatus;
   unreadMessages: number;
   orders: Array<{
     id: string;
@@ -50,6 +65,8 @@ type AccountSummary = {
     content?: string;
     qrCode?: string;
     secret?: string;
+    otp?: string;
+    mfaType?: string;
   };
 };
 
@@ -124,33 +141,8 @@ function AccountHome({ summary }: { summary: AccountSummary }) {
         <a className="button secondary outline" href="/app/user/download-file">My Files</a>
         <a className="button secondary outline" href="/app/user/upload-xml-file">Upload XML</a>
         <a className="button secondary outline" href="/app/user/import-settings">Import Settings</a>
-        <a className="button secondary outline" href="/app/user/security">Security</a>
         <a className="button secondary outline" href="/app/user/command-shell">Command Shell</a>
         <a className="button secondary outline" href="/app/user/log">Activity Log</a>
-      </div>
-    </section>
-  );
-}
-
-function ProfilePage({ summary }: { summary: AccountSummary }) {
-  const user = summary.user;
-  return (
-    <section className="page-frame content-page">
-      <AccountBreadcrumb current="My Profile" />
-      <h1>My Profile</h1>
-      <table className="profile-table"><tbody>
-        <tr><th scope="row">Username</th><td>{user.username}</td></tr>
-        <tr><th scope="row">Email</th><td>{user.email}</td></tr>
-        <tr><th scope="row">Name</th><td>{user.firstName} {user.lastName}</td></tr>
-        <tr><th scope="row">Phone</th><td>{user.phone || '-'}</td></tr>
-        <tr><th scope="row">Address</th><td>{user.address || '-'}</td></tr>
-        <tr><th scope="row">City</th><td>{user.city || '-'}</td></tr>
-        <tr><th scope="row">Postcode</th><td>{user.zip || '-'}</td></tr>
-      </tbody></table>
-      <div className="action-row">
-        <a className="button" href="/app/user/edit-profile">Edit Profile</a>
-        <a className="button secondary outline" href="/app/user/change-password">Change Password</a>
-        <a className="button secondary outline" href="/app/user/security">Security</a>
       </div>
     </section>
   );
@@ -185,18 +177,134 @@ function ChangePasswordPage() {
 }
 
 function SecurityPage({ summary }: { summary: AccountSummary }) {
+  const current = summary.mfa?.mfaType ?? summary.user.mfaType ?? 'MFA_NONE';
   return (
     <section className="page-frame content-page tool-page">
       <AccountBreadcrumb current="Security Settings" />
       <h1>Security Settings</h1>
-      <p><strong>Current MFA:</strong> {summary.user.mfaType ?? 'MFA_NONE'}</p>
-      <form className="tool-form" method="POST" action="/user/security/enable-mfa">
+      <h2>Multi-Factor Authentication</h2>
+      <form className="tool-form mfa-form" method="POST" action="/user/security/enable-mfa">
         <input type="hidden" name="appReturnTo" value="/app/user/security" />
-        <input type="hidden" name="type" value="app" />
-        <button type="submit">Enable TOTP MFA</button>
+        <fieldset className="mfa-type-choice">
+          <legend>Second factor</legend>
+          <label><input type="radio" name="type" value="MFA_APP" defaultChecked={current === 'MFA_APP'} /> Authenticator app (TOTP)</label>
+          <label><input type="radio" name="type" value="MFA_EMAIL" defaultChecked={current === 'MFA_EMAIL'} /> Email one-time code</label>
+          <label><input type="radio" name="type" value="MFA_SMS" defaultChecked={current === 'MFA_SMS'} /> SMS one-time code</label>
+          <label><input type="radio" name="type" value="MFA_NONE" defaultChecked={current === 'MFA_NONE'} /> None — disabled</label>
+        </fieldset>
+        <p className="form-note">
+          Use <strong>Authenticator app (TOTP)</strong> for demonstrations. Email and SMS codes are
+          delivered through SMTP and Twilio, which are not configured by default, so the one-time code
+          is only written to the application log. Selecting <strong>None</strong> disables MFA entirely.
+        </p>
+        <button type="submit">Save Second Factor</button>
       </form>
-      <ResultPanel result={summary.reactResult} />
+      <ResultPanel messageOnly result={summary.reactResult} />
+      {current === 'MFA_APP' ? <TotpSetupPanel mfa={summary.mfa} /> : null}
+      <h2>Confirm Enrolment</h2>
+      <form className="tool-form mfa-form" method="POST" action="/user/security/confirm-mfa">
+        <input type="hidden" name="appReturnTo" value="/app/user/security" />
+        <label>Code from your app or message<input maxLength={6} name="code" required type="text" /></label>
+        <button type="submit">Confirm Code</button>
+      </form>
     </section>
+  );
+}
+
+function TotpSetupPanel({ mfa }: { mfa?: MfaStatus }) {
+  const [status, setStatus] = React.useState(mfa ?? null);
+
+  const refreshCode = React.useCallback(() => {
+    getJson<MfaStatus>('/user/security/totp-secret').then(setStatus).catch(() => undefined);
+  }, []);
+
+  if (!status?.secret) return null;
+
+  return (
+    <div className="notice result-panel mfa-panel">
+      <h3>Authenticator Setup</h3>
+      <p>Scan this QR code with your authenticator app, then confirm with a generated code below.</p>
+      {status.qrCode ? <img className="qr-code" src={status.qrCode} alt="TOTP enrolment QR code" /> : null}
+      <RevealValue label="TOTP secret" value={status.secret} />
+      {status.currentCode ? <RevealTotpCode code={status.currentCode} onRefresh={refreshCode} /> : null}
+    </div>
+  );
+}
+
+function ProfilePage({ summary }: { summary: AccountSummary }) {
+  const user = summary.user;
+  const mfa = summary.mfa;
+  return (
+    <section className="page-frame content-page">
+      <AccountBreadcrumb current="My Profile" />
+      <h1>My Profile</h1>
+      <table className="profile-table"><tbody>
+        <tr><th scope="row">Username</th><td>{user.username}</td></tr>
+        <tr><th scope="row">Email</th><td>{user.email}</td></tr>
+        <tr><th scope="row">Name</th><td>{user.firstName} {user.lastName}</td></tr>
+        <tr><th scope="row">Phone</th><td>{user.phone || '-'}</td></tr>
+        <tr><th scope="row">Address</th><td>{user.address || '-'}</td></tr>
+        <tr><th scope="row">City</th><td>{user.city || '-'}</td></tr>
+        <tr><th scope="row">Postcode</th><td>{user.zip || '-'}</td></tr>
+        <tr><th scope="row">MFA</th><td>{mfa?.mfaType ?? 'MFA_NONE'}</td></tr>
+      </tbody></table>
+      <ProfileMfaPanel summary={summary} />
+      <div className="action-row">
+        <a className="button" href="/app/user/edit-profile">Edit Profile</a>
+        <a className="button secondary outline" href="/app/user/change-password">Change Password</a>
+        <a className="button secondary outline" href="/app/user/security">Security</a>
+      </div>
+    </section>
+  );
+}
+
+function ProfileMfaPanel({ summary }: { summary: AccountSummary }) {
+  const [lookupId, setLookupId] = React.useState('');
+  const [viewed, setViewed] = React.useState<MfaStatus | null>(null);
+  const [status, setStatus] = React.useState('');
+  const mfa = viewed ?? summary.mfa;
+
+  async function load(target: string) {
+    // INSECURE: user-supplied id selects whose TOTP secret is returned (CWE-639)
+    // Purpose: demonstrates an IDOR exposing second-factor credentials for Fortify SAST/DAST
+    // Fix: Drop the userId parameter and always render the authenticated user's own status
+    return getJson<MfaStatus>(`/user/security/totp-secret?userId=${encodeURIComponent(target)}`);
+  }
+
+  async function lookup(event: React.FormEvent) {
+    event.preventDefault();
+    setStatus('Loading…');
+    try {
+      setViewed(await load(lookupId));
+      setStatus('');
+    } catch {
+      setStatus('Unable to load MFA details for that user.');
+    }
+  }
+
+  const refreshCode = React.useCallback(() => {
+    load(mfa?.userId ?? '').then(setViewed).catch(() => undefined);
+  }, [mfa?.userId]);
+
+  return (
+    <div className="notice result-panel mfa-panel">
+      <h2>Authenticator Setup</h2>
+      {mfa?.qrCode ? <img className="qr-code" src={mfa.qrCode} alt="TOTP enrolment QR code" /> : <p>No TOTP secret enrolled.</p>}
+      {mfa?.secret ? <RevealValue label="TOTP secret" value={mfa.secret} /> : null}
+      {mfa?.currentCode ? <RevealTotpCode code={mfa.currentCode} onRefresh={refreshCode} /> : null}
+      <form className="tool-form mfa-form" method="POST" action="/user/security/regenerate-totp">
+        <input type="hidden" name="appReturnTo" value="/app/user/profile" />
+        <button type="submit">Generate New Secret</button>
+      </form>
+      <form className="tool-form mfa-form" onSubmit={lookup}>
+        <label>View another account&apos;s setup (user id or username)
+          <input name="userId" onChange={event => setLookupId(event.target.value)} type="text" value={lookupId} />
+        </label>
+        <button type="submit">Look Up</button>
+      </form>
+      {status ? <p className="status-line">{status}</p> : null}
+      <ResultPanel result={summary.reactResult} />
+    </div>
   );
 }
 
@@ -485,14 +593,19 @@ function StoredLogContent({ html }: { html: string }) {
   );
 }
 
-function ResultPanel({ result }: { result: AccountSummary['reactResult'] }) {
+function ResultPanel({ result, messageOnly }: { result: AccountSummary['reactResult']; messageOnly?: boolean }) {
   if (!result) return null;
   if (result.kind === 'mfa') {
     return (
       <div className="notice result-panel">
         <p>{result.message}</p>
-        {result.qrCode ? <img className="qr-code" src={result.qrCode} alt="QR Code" /> : null}
-        {result.secret ? <p>Secret: <code>{result.secret}</code></p> : null}
+        {messageOnly ? null : (
+          <>
+            {result.qrCode ? <img className="qr-code" src={result.qrCode} alt="QR Code" /> : null}
+            {result.secret ? <RevealValue label="Secret" value={result.secret} /> : null}
+          </>
+        )}
+        {result.otp ? <RevealValue label="Demo one-time code" value={result.otp} /> : null}
       </div>
     );
   }

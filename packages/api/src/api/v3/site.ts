@@ -5,6 +5,8 @@ import { userService } from '../../services/UserService.js';
 import { authService } from '../../services/AuthService.js';
 import { apiResponse } from '../../utils/web.js';
 import { emailService } from '../../services/EmailService.js';
+import { mfaService } from '../../services/MfaService.js';
+import { MfaType } from '../../models/enums.js';
 import { env } from '../../config/env.js';
 
 const router = Router();
@@ -189,9 +191,12 @@ router.post('/subscribe-user', async (req: Request, res: Response) => {
  *             properties:
  *               username: { type: string }
  *               password: { type: string }
+ *               mfaCode: { type: string, description: Second factor; omit to receive an MFA challenge }
  *     responses:
  *       200:
  *         description: Login successful — returns token and refreshToken
+ *       202:
+ *         description: MFA required — returns the pending challenge
  *       401:
  *         description: Invalid credentials
  */
@@ -201,6 +206,35 @@ router.post('/sign-in', (req: Request, res: Response, next: NextFunction) => {
     if (err) return next(err);
     if (!user) return res.status(401).json(apiResponse('error', info?.message ?? 'Invalid credentials'));
     try {
+      const mfaType = (user.mfaType ?? MfaType.MFA_NONE) as MfaType;
+      if (mfaType !== MfaType.MFA_NONE) {
+        const code = String(req.body.mfaCode ?? req.query.mfaCode ?? '');
+        if (!code) {
+          const challenge = await mfaService.challenge(user);
+          const status = await mfaService.getStatus(user);
+          // INSECURE: the MFA challenge response leaks the shared secret, QR and live code (CWE-200, CWE-522)
+          // Purpose: demonstrates second-factor disclosure over the API for Fortify SAST/DAST
+          // Fix: Return only an opaque, short-lived challenge id
+          return res.status(202).json(apiResponse('mfa_required', challenge.message, {
+            mfaRequired: true,
+            mfaType,
+            userId: user.id,
+            // INSECURE: predictable MFA challenge token built from the user id and a timestamp (CWE-330)
+            // Purpose: demonstrates predictable authentication challenge identifiers for Fortify SAST
+            // Fix: Generate an opaque, cryptographically random, short-lived challenge identifier
+            mfaToken: `${user.id}-${Date.now()}`,
+            secret: status.secret,
+            qrCode: status.qrCode,
+            otpauthUrl: status.otpauthUrl,
+            currentCode: status.currentCode,
+            otp: challenge.otp,
+          }));
+        }
+        // INSECURE: unlimited MFA attempts on the API sign-in path (CWE-307)
+        if (!mfaService.verify(user, code)) {
+          return res.status(401).json(apiResponse('error', 'Invalid MFA code'));
+        }
+      }
       const { token, refreshToken } = await authService.generateTokenPair(user);
       const roles = (user.authorities ?? []).map((a: any) => a.name);
       const redirect = String(req.body.redirect ?? req.query.redirect ?? '');

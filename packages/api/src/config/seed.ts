@@ -10,7 +10,11 @@ import { Message } from '../models/Message.js';
 import { Review } from '../models/Review.js';
 import { UserAuthority } from '../models/UserAuthority.js';
 import { AuthorityType, MfaType } from '../models/enums.js';
+import { verificationService } from '../services/VerificationService.js';
 import { logger } from '../utils/logger.js';
+
+// Seeded TOTP secrets are derivable from the username so demos reproduce across database resets.
+export const demoTotpSecret = (username: string) => verificationService.generateDeterministicTotpSecret(username);
 
 export async function seed() {
   logger.info('Seeding database...');
@@ -33,19 +37,22 @@ export async function seed() {
     id: uuidv4(), username: 'admin', password, email: 'admin@iwa-pharmacy.local',
     firstName: 'Admin', lastName: 'User', phone: '07700900000',
     address: '1 Admin Street', city: 'London', state: 'England', zip: 'SW1A 1AA',
-    country: 'UK', enabled: true, verified: true, mfaType: MfaType.MFA_NONE,
+    country: 'UK', enabled: true, verified: true,
+    mfaType: MfaType.MFA_APP, mfaSecret: demoTotpSecret('admin'),
   });
   const user1 = await User.create({
     id: uuidv4(), username: 'user1', password, email: 'user1@iwa-pharmacy.local',
     firstName: 'John', lastName: 'Doe', phone: '07700900001',
     address: '2 User Street', city: 'Manchester', state: 'England', zip: 'M1 1AA',
-    country: 'UK', enabled: true, verified: true, mfaType: MfaType.MFA_NONE,
+    country: 'UK', enabled: true, verified: true,
+    mfaType: MfaType.MFA_APP, mfaSecret: demoTotpSecret('user1'),
   });
   const user2 = await User.create({
     id: uuidv4(), username: 'user2', password, email: 'user2@iwa-pharmacy.local',
     firstName: 'Jane', lastName: 'Smith', phone: '07700900002',
     address: '3 User Street', city: 'Birmingham', state: 'England', zip: 'B1 1AA',
-    country: 'UK', enabled: true, verified: true, mfaType: MfaType.MFA_NONE,
+    country: 'UK', enabled: true, verified: true,
+    mfaType: MfaType.MFA_EMAIL,
   });
   const apiUser = await User.create({
     id: uuidv4(), username: 'api', password, email: 'api@iwa-pharmacy.local',
