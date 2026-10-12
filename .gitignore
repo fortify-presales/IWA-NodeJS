@@ -32,7 +32,9 @@ fortifypackage.zip
 *.zip
 *.sarif
 *.json
+!fortify/*.json
 core_*.xml
 extended_*.xml
 xxe.xml
 downloaded-win.ini
+iwa-nodejs.faa-full.md

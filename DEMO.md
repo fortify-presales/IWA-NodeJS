@@ -55,7 +55,7 @@ code, the base32 secret and the live code in its "Demo helper" panel (CWE-200).
 
 **Endpoint:** `GET /api/v3/users?keywords=<payload>`  
 **Auth:** Bearer Token (get from `POST /api/v3/site/sign-in`)  
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 ### Bash
 
@@ -104,7 +104,7 @@ payload through `dangerouslySetInnerHTML`.
 **API Endpoint:** `POST /api/v3/reviews`  
 **Supporting Endpoint:** `GET /api/v3/products`  
 **Auth:** Bearer Token (get from `POST /api/v3/site/sign-in`)  
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 First sign in as `user1`, retrieve a product ID, and create a review containing
 the stored-XSS payload through the API:
@@ -238,7 +238,7 @@ $summary.data.reactResult.content
 
 **API Endpoint:** `GET /user/files/download/unverified?file=../../etc/passwd`  
 **Auth:** User web session (reuse `cookies.txt` or `$webSession` from the XXE example, or log in at `/login`)  
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 ```
 http://localhost:8888/user/files/download/unverified?file=../../../etc/passwd
@@ -379,7 +379,7 @@ $summary.data.reactResult.content
 
 **Endpoint:** `POST /user/import-settings`  
 **React UI:** `http://localhost:8888/app/user/import-settings`  
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 This web route requires a login session, not the API bearer token. It redirects after
 importing; the result is stored in the session and returned once by
@@ -431,7 +431,7 @@ the supplied function expression, before the route redirects to the React page.
 
 **Endpoint:** `POST /admin/log` (form field `val`)  
 **React UI:** `http://localhost:8888/app/admin/log`  
-**Fortify Tooling Detection:** SAST  
+**Fortify Tooling Detection:** SAST, FAA
 **Auth:** Admin web session from `POST /login` (not an API bearer token)
 
 `GET /admin/log` only redirects to the React page; a query-string `val` does not
@@ -483,25 +483,26 @@ actual successful login for `root`.
 
 ## 9. Sensitive Data in Logs (CWE-532)
 
-**Step:** Attempt login and check logs.  
-**Fortify Tooling Detection:** SAST
+**Step:** Submit a web login attempt and inspect the application log.
+**Fortify Tooling Detection:** SAST, FAA
 
 ### Bash
 
 ```bash
-curl -X POST http://localhost:8888/api/v3/site/sign-in \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Password123!"}'
-cat ./logs/iwa.log | grep "password"
+curl -s -o /dev/null -X POST http://localhost:8888/login \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  --data-urlencode 'username=admin' \
+  --data-urlencode 'password=Password123!'
+grep -i 'password' packages/api/logs/iwa.log | tail -5
 ```
 
 ### PowerShell
 
 ```powershell
-Invoke-RestMethod -Method Post -Uri 'http://localhost:8888/api/v3/site/sign-in' `
-  -ContentType 'application/json' `
-  -Body (@{ username = 'admin'; password = 'Password123!' } | ConvertTo-Json)
-Get-Content './logs/iwa.log' | Select-String 'password'
+Invoke-WebRequest -Method Post -Uri 'http://localhost:8888/login' `
+  -ContentType 'application/x-www-form-urlencoded' `
+  -Body @{ username = 'admin'; password = 'Password123!' } | Out-Null
+Get-Content './packages/api/logs/iwa.log' | Select-String 'password' | Select-Object -Last 5
 ```
 
 **Expected:** Password `Password123!` appears in the debug log.
@@ -511,7 +512,7 @@ Get-Content './logs/iwa.log' | Select-String 'password'
 ## 10. Broken Access Control / IDOR (CWE-306, CWE-639)
 
 **Endpoint:** `PUT /api/v3/users/:id` — **No authentication required!**  
-**Fortify Tooling Detection:** DAST
+**Fortify Tooling Detection:** DAST, FAA
 
 ### Bash
 
@@ -631,7 +632,7 @@ Invoke-WebRequest -Method Post -Uri 'http://localhost:8888/admin/diagnostics' `
 
 **Endpoint:** `POST /admin/diagnostics` — field `url`  
 **React UI:** `http://localhost:8888/app/admin/diagnostics`  
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 **Auth:** Admin web session created in demo 11
 
 ```
@@ -717,9 +718,13 @@ curl -L 'http://localhost:8888/login?redirect=http://evil.example.com'
 Invoke-WebRequest -MaximumRedirection 0 -Uri 'http://localhost:8888/login?redirect=http://evil.example.com'
 ```
 
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 After successful login, user is redirected to `http://evil.example.com`.
+
+The latest FAA report also identifies `GET /api/v3/products/:id/image`, which redirects to the product's
+stored `image` value without validating the destination. An admin or `ROLE_API` account can set that value
+to an external URL through the product API; requesting the image endpoint then returns a redirect to it.
 
 ---
 
@@ -741,7 +746,7 @@ Invoke-WebRequest -Method Options -Uri 'http://localhost:8888/api/v3/users' `
   -Headers @{ Origin = 'https://evil.example.com'; 'Access-Control-Request-Method' = 'GET' }
 ```
 
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 **Expected:** `Access-Control-Allow-Origin: https://evil.example.com` in response.
 
@@ -761,7 +766,7 @@ curl http://localhost:8888/api/v3/users/invalid-id-that-causes-error
 Invoke-WebRequest -Uri 'http://localhost:8888/api/v3/users/invalid-id-that-causes-error'
 ```
 
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 **Expected:** Full stack trace and SQL error returned in JSON response.
 
@@ -1157,7 +1162,7 @@ filesystem access; DAST can exercise the traversal payload.
 
 **Endpoints:** `GET /login-mfa/hint`, `GET /api/v3/mfa/status/:userId`, `/qrcode/:userId`, `/current-code/:userId`, `POST /api/v3/site/sign-in`
 **Auth:** None
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 ### Bash
 
@@ -1193,7 +1198,7 @@ in the `202` challenge response. `/app/login-mfa` renders the same material in i
 
 **Endpoints:** `POST /login` then `GET /app/user/profile`
 **Auth:** Password only
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 ### Bash
 
@@ -1225,7 +1230,7 @@ factor is advisory only.
 
 **Endpoints:** `POST /login-mfa`, `POST /api/v3/mfa/verify`, `POST /api/v3/site/sign-in`
 **Auth:** None
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 ### Bash
 
@@ -1274,7 +1279,7 @@ come from `Math.random()` (CWE-338).
 
 **Endpoints:** `GET /api/v3/account/summary`, `POST /user/security/enable-mfa`
 **Auth:** Session cookie
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 ### Bash
 
@@ -1300,7 +1305,7 @@ MFA status endpoints, rendered on `/app/user/profile`, and written to `logs/iwa.
 
 **Endpoints:** `POST /api/v3/mfa/disable`, `POST /login-mfa/reset`, `POST /user/security/disable-mfa`
 **Auth:** None for the API/reset routes; session only for `/user/security/disable-mfa`
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 ### Bash
 
@@ -1338,7 +1343,7 @@ button does the same thing from the challenge screen. Re-enable with
 
 **Endpoints:** `GET /user/security/totp-secret?userId=`, `POST /user/security/regenerate-totp`
 **Auth:** Any signed-in user
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 ### Bash
 
@@ -1375,7 +1380,7 @@ commands above demonstrate that each sequential rotation changes the secret.
 
 **Endpoints:** `GET /api/v3/mfa/status/:userId`, `GET /api/v3/mfa/qrcode/:userId`, `POST /api/v3/mfa/enrol`
 **Auth:** None
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 ### Bash
 
@@ -1408,7 +1413,7 @@ token. The final request restores the `test` account to `MFA_NONE` after the dem
 
 **Endpoints:** `POST /api/v3/mfa/enrol`, `POST /api/v3/mfa/confirm`, `GET /api/v3/mfa/status/:userId`
 **Auth:** None
-**Fortify Tooling Detection:** SAST, DAST
+**Fortify Tooling Detection:** SAST, DAST, FAA
 
 ### Bash
 
@@ -1468,6 +1473,299 @@ Invoke-WebRequest -Verbose -Method Post `
 
 **Expected:** The request is sent over HTTP, not TLS. A packet capture of the HTTP exchange shows the
 credentials in the request body. Do not expose the demo server to an untrusted network.
+
+---
+
+## 34. Private Message API Access Control and Mass Assignment (CWE-639, CWE-915)
+
+**Endpoints:** `GET /api/v3/messages`, `GET /api/v3/messages/:id`, `GET /api/v3/messages/unread-count/:id`, `POST /api/v3/messages`, `PUT /api/v3/messages/:id`, `DELETE /api/v3/messages/:id`
+**Auth:** Bearer token; sign in as `user1` using the token flow above
+**Fortify Tooling Detection:** FAA
+
+The message API authenticates callers but does not scope reads, updates or deletes to the caller's messages.
+The create route also forwards the full request body to the repository, allowing the caller to select the
+recipient. Start with the list response, choose a message ID that belongs to another user, then request it
+directly:
+
+### Bash
+
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8888/api/v3/messages | jq '.data'
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8888/api/v3/messages/<another-user-message-id> | jq '.data'
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8888/api/v3/messages/unread-count/admin | jq '.data'
+```
+
+### PowerShell
+
+```powershell
+Invoke-RestMethod -Uri 'http://localhost:8888/api/v3/messages' `
+  -Headers @{ Authorization = "Bearer $TOKEN" }
+Invoke-RestMethod -Uri 'http://localhost:8888/api/v3/messages/<another-user-message-id>' `
+  -Headers @{ Authorization = "Bearer $TOKEN" }
+Invoke-RestMethod -Uri 'http://localhost:8888/api/v3/messages/unread-count/admin' `
+  -Headers @{ Authorization = "Bearer $TOKEN" }
+```
+
+**Expected:** The authenticated user can see all messages and read another user's message or unread count.
+The corresponding `PUT` and `DELETE` routes also omit ownership checks; `POST` accepts a client-supplied
+`userId` and other model fields. Message responses also include the related full User row, including password
+hash, MFA secret and PII. Avoid the write/delete requests against data you want to keep.
+
+---
+
+## 35. Account and Admin Summary Data Disclosure (CWE-200, CWE-532)
+## 35. Account and Admin Summary Data Disclosure (CWE-200, CWE-522, CWE-532)
+
+**Endpoints:** `GET /api/v3/account/summary`, `GET /api/v3/admin/summary`, `GET /api/v3/messages`, `GET /api/v3/orders/:id`
+**Auth:** Session for account/admin summaries; bearer token for messages/orders
+**Fortify Tooling Detection:** FAA
+
+The account summary returns the application log to an authenticated customer. The admin summary serializes
+all users, including password hashes and plaintext MFA secrets. Message and order responses also eager-load
+related User rows without excluding password hashes, MFA secrets or personal data. Sign in through `/login`
+and inspect the session-protected summaries; use a bearer token for the message/order APIs and an admin
+session for the admin summary.
+
+### Bash
+
+```bash
+curl -s -b cookies.txt http://localhost:8888/api/v3/account/summary | jq '.data'
+curl -s -b admin-cookies.txt http://localhost:8888/api/v3/admin/summary | jq '.data.users'
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8888/api/v3/messages | jq '.data.rows[].user'
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8888/api/v3/orders/ORD-003 | jq '.data.user'
+```
+
+### PowerShell
+
+```powershell
+(Invoke-RestMethod -Uri 'http://localhost:8888/api/v3/account/summary' -WebSession $webSession).data
+(Invoke-RestMethod -Uri 'http://localhost:8888/api/v3/admin/summary' -WebSession $adminSession).data.users
+(Invoke-RestMethod -Uri 'http://localhost:8888/api/v3/messages' `
+  -Headers @{ Authorization = "Bearer $TOKEN" }).data.rows.user
+(Invoke-RestMethod -Uri 'http://localhost:8888/api/v3/orders/ORD-003' `
+  -Headers @{ Authorization = "Bearer $TOKEN" }).data.user
+```
+
+**Expected:** The account response includes log content; the admin response includes sensitive fields for
+every account. The existing MFA disclosure walkthroughs (24 and 28) cover the related secret exposure.
+
+---
+
+## 36. Verification, Reset and MFA Secrets in Logs (CWE-532, CWE-338)
+
+**Endpoints:** `POST /user/forgot-password`, `POST /user/register`, MFA email/SMS delivery
+**Auth:** Registration and password reset do not require an account; inspect logs locally
+**Fortify Tooling Detection:** FAA
+
+When SMTP is not configured, `EmailService` logs the full outgoing email body, including verification links,
+password-reset links and OTPs. Verification/reset tokens and email/SMS OTPs are also generated using
+`Math.random()`-based logic. Use a disposable account, register or request a password reset, then inspect the
+local application log. The current report does not claim that a reset token is returned in the HTTP response.
+
+### Bash
+
+```bash
+curl -s -c reset-cookies.txt -o /dev/null -X POST http://localhost:8888/user/forgot-password \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  --data-urlencode 'email=user1@example.com'
+grep -Ei 'EmailService|reset|verify|otp' packages/api/logs/iwa.log | tail -20
+```
+
+### PowerShell
+
+```powershell
+$resetSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+Invoke-WebRequest -Method Post -Uri 'http://localhost:8888/user/forgot-password' `
+  -WebSession $resetSession -ContentType 'application/x-www-form-urlencoded' `
+  -Body @{ email = 'user1@example.com' } | Out-Null
+Select-String -Path './packages/api/logs/iwa.log' -Pattern 'EmailService|reset|verify|otp' | Select-Object -Last 20
+```
+
+**Expected:** With SMTP unset, logs contain outgoing email content and authentication tokens/codes. Tokens
+and OTPs are also predictable because their generation uses a non-cryptographic PRNG.
+
+---
+
+## 37. OpenAI API Key in Browser Storage (Insecure Storage)
+
+**Location:** `/app/assistant`, `localStorage` key `iwa.openaiApiKey`
+**Fortify Tooling Detection:** FAA
+
+Configure a disposable OpenAI API key in the assistant page, then inspect the browser's Application/Storage
+panel or run this in the page's developer console:
+
+```javascript
+localStorage.getItem('iwa.openaiApiKey')
+```
+
+**Expected:** The key is readable by any script running in the origin, including scripts injected through the
+application's intentional XSS demonstrations. Remove the test key from the assistant settings after the demo.
+
+---
+
+## 38. Cart Quantity Tampering and Unbounded Pagination (CWE-472, CWE-400)
+
+**Endpoints:** `POST /cart/add`, `POST /cart/update`, `POST /cart/checkout`; paginated API routes such as `GET /api/v3/messages`
+**Auth:** Cart checkout requires a web session; messages requires a bearer token
+**Fortify Tooling Detection:** FAA
+
+With an authenticated web session and a valid product ID, submit a negative quantity. The checkout handler
+uses the submitted quantity directly when calculating the order amount:
+
+### Bash
+
+```bash
+curl -s -b cookies.txt -X POST http://localhost:8888/cart/add \
+  -d "productId=$PRODUCT_ID&qty=-2"
+curl -s -b cookies.txt -X POST http://localhost:8888/cart/checkout \
+  -d 'appReturnTo=%2Fapp%2Fcart'
+```
+
+The pagination helper also passes caller-supplied `page` and `size` directly to the database with no bounds.
+To inspect the request behavior without generating a large response, use a negative page/size value against
+the message endpoint:
+
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8888/api/v3/messages?page=-1&size=-25'
+```
+
+**Expected:** Negative quantities can reduce the computed order total; pagination accepts unbounded or
+negative values rather than clamping them to a safe range.
+
+---
+
+## 39. Account Enumeration (CWE-204)
+
+**Endpoints:** `GET /api/v3/site/username-already-exists/:username`, `GET /api/v3/site/email-already-exists/:email`
+**Auth:** None
+**Fortify Tooling Detection:** FAA
+
+Query a known and an unknown username or email. The endpoints return an `exists` boolean directly and have no
+rate limit, enabling enumeration of pharmacy customers.
+
+### Bash
+
+```bash
+curl -s http://localhost:8888/api/v3/site/username-already-exists/admin | jq .data
+curl -s http://localhost:8888/api/v3/site/username-already-exists/not-a-real-user | jq .data
+curl -s 'http://localhost:8888/api/v3/site/email-already-exists/admin@example.invalid' | jq .data
+```
+
+### PowerShell
+
+```powershell
+(Invoke-RestMethod -Uri 'http://localhost:8888/api/v3/site/username-already-exists/admin').data
+(Invoke-RestMethod -Uri 'http://localhost:8888/api/v3/site/username-already-exists/not-a-real-user').data
+```
+
+**Expected:** Responses distinguish existing from non-existing accounts without authentication.
+
+---
+
+## 40. Login Lockout Denial of Service (CWE-400)
+
+**Endpoint:** `POST /login`
+**Auth:** None
+**Fortify Tooling Detection:** FAA
+
+The Passport login strategy permanently locks a known username after five incorrect password attempts, and
+the codebase contains no corresponding unlock flow. Use a disposable account or be prepared to reset the
+demo database; do not lock a seeded account you need for other walkthroughs.
+
+```bash
+for attempt in 1 2 3 4 5; do
+  curl -s -o /dev/null -X POST http://localhost:8888/login \
+    -H 'Content-Type: application/x-www-form-urlencoded' \
+    --data-urlencode 'username=user1' \
+    --data-urlencode 'password=definitely-wrong'
+done
+
+# A correct password is also rejected after the account is locked.
+curl -i -X POST http://localhost:8888/login \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  --data-urlencode 'username=user1' \
+  --data-urlencode 'password=Password123!'
+```
+
+**Expected:** Five incorrect attempts lock the account, allowing an unauthenticated caller to deny its owner
+access. Reset the demo database after using a seeded account for this demonstration.
+
+---
+
+## 41. Plaintext Refresh Token Storage (CWE-522, CWE-312)
+
+**Endpoint:** `POST /api/v3/site/sign-in`; SQLite table `refresh_tokens`
+**Auth:** Sign-in request; seeded `admin` and `user1` require the MFA code described at the top
+**Fortify Tooling Detection:** FAA
+
+After a successful sign-in, the API returns a `refreshToken` and stores that exact token in the database.
+For the default local database, inspect the table from the repository root (requires the `sqlite3` CLI):
+
+### Bash
+
+```bash
+sqlite3 packages/api/data/iwa.sqlite 'SELECT userId, token, expiryDate FROM refresh_tokens;'
+```
+
+### PowerShell
+
+```powershell
+sqlite3 './packages/api/data/iwa.sqlite' 'SELECT userId, token, expiryDate FROM refresh_tokens;'
+```
+
+If `DATABASE_URL` is set, inspect that configured SQLite file instead. **Expected:** `refresh_tokens.token`
+contains the usable refresh credential in cleartext; a database reader can exchange it at
+`POST /api/v3/site/refresh-token` for a new access token.
+
+---
+
+## 42. Stored Product Image Open Redirect (CWE-601)
+
+**Endpoint:** `GET /api/v3/products/:id/image`
+**Auth:** None to follow the redirect; admin or `ROLE_API` to set the product image
+**Fortify Tooling Detection:** FAA
+
+The endpoint redirects to the product's stored `image` value without validating its destination. Set a
+disposable product's image to an external URL with an authorized product-management token, then request its
+image endpoint without following redirects:
+
+```bash
+curl -s -X PUT "http://localhost:8888/api/v3/products/$PRODUCT_ID" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"image":"https://example.org/"}'
+curl -s -D - -o /dev/null "http://localhost:8888/api/v3/products/$PRODUCT_ID/image"
+```
+
+**Expected:** The image endpoint responds with a redirect whose `Location` header is the stored external URL.
+
+---
+
+## Fortify Agentic Analyzer Scan Snapshot (2026-10-12)
+
+The latest report, `iwa-nodejs.faa-full.md`, was generated by Fortify Agentic Analyzer 26.4.0 on
+2026-10-12 and contains **95 finding records**: 78 Critical, 8 High, 7 Medium and 2 Low. Related routes and
+code paths can describe the same underlying weakness; use the report's instance IDs when comparing issue
+records. The catalog and walkthroughs cover these findings:
+
+| Finding area | FAA coverage in this guide |
+|---|---|
+| Agent prompt injection, tool authentication/authorization, SSRF, path traversal and excessive agency | Demos 19–23 |
+| MFA disclosure, access control, enrollment, bypass, brute force, predictable secrets and secret logging | Demos 24–32 and 36 |
+| API access control, IDOR, mass assignment and nested credential exposure | Demos 10, 34 and 35 |
+| SQL/predicate injection, stored XSS, deserialization and log forging | Demos 1, 3, 7, 8 and 19–23 |
+| Account enumeration, login lockout and password/MFA attempt limits | Demos 26, 39 and 40 |
+| CSRF, CORS, redirects, cookie/session weaknesses and disabled Helmet protections | Demos 13, 15, 16, 25 and 42 |
+| Weak token generation, plaintext refresh-token storage and sensitive email/log content | Demos 9, 27, 36 and 41 |
+| Cart quantity tampering and unbounded pagination | Demo 38 |
+| Assistant API key in browser storage | Demo 37 |
+
+The report identifies CSP and COEP/COOP protections explicitly disabled in `packages/api/src/config/security.ts`.
+It also flags cookie attributes, session fixation, and account/order/message data disclosures. The FAA report
+does not list every vulnerability already present in this intentionally vulnerable application; the public
+catalog's FAA tag is limited to findings represented in this report. These observations are for training and
+do not request hardening the demo code.
 
 ---
 

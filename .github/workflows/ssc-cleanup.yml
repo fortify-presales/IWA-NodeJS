@@ -21,7 +21,7 @@ jobs:
       - name: Delete closed PR application version
         run: |
           set -euo pipefail
-          fcli ssc session login --url "$SSC_URL" --token "$SSC_TOKEN" --disable sc-sast,sc-dast--ssc-session github-actions
+          fcli ssc session login --url "$SSC_URL" --token "$SSC_TOKEN" --ssc-session github-actions
           trap 'fcli ssc session logout --ssc-session github-actions || true' EXIT
           fcli ssc appversion delete "$SSC_APPVERSION" --ssc-session github-actions
         env:
