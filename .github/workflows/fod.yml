@@ -28,6 +28,8 @@ on:
 jobs:
   Fortify-AST-Scan:
     runs-on: ubuntu-latest
+    env:
+      NEXUS_REPO_NPM: ${{ vars.NEXUS_REPO_NPM || 'https://registry.npmjs.org/' }}
     permissions:
       actions: read
       contents: read
@@ -55,6 +57,8 @@ jobs:
           npm ci
           npm run clean
           npm run build
+        env:
+          NEXUS_REPO_AUTH: ${{ secrets.NEXUS_REPO_AUTH }}
       # Perform Fortify on Demand SAST scan and import SAST results into GitHub code scanning alerts
       - name: Run FoD Scan
         uses: fortify/github-action@v3

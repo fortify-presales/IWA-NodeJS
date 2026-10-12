@@ -1,16 +1,22 @@
+# syntax=docker/dockerfile:1.7
 # Multi-stage Dockerfile for IWA Pharmacy Direct (npm workspaces monorepo)
 FROM node:20 AS builder
 
+ARG NEXUS_REPO_NPM=https://registry.npmjs.org/
+
 WORKDIR /app
+COPY .npmrc ./
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/agent/package.json packages/agent/package.json
 COPY packages/api/package.json packages/api/package.json
 COPY packages/web/package.json packages/web/package.json
-RUN npm ci --ignore-scripts
+RUN --mount=type=secret,id=nexus_repo_auth \
+  NEXUS_REPO_AUTH="$(if [ -f /run/secrets/nexus_repo_auth ]; then cat /run/secrets/nexus_repo_auth; fi)" npm ci --ignore-scripts
 COPY . .
 # Reinstall after copying source to ensure workspace symlinks are set up
-RUN npm install --package-lock=false
+RUN --mount=type=secret,id=nexus_repo_auth \
+  NEXUS_REPO_AUTH="$(if [ -f /run/secrets/nexus_repo_auth ]; then cat /run/secrets/nexus_repo_auth; fi)" npm install --package-lock=false
 RUN npm run build
 
 FROM node:20-slim AS runtime
